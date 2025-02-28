@@ -2,7 +2,7 @@ import os
 import argparse
 from natsort import natsorted
 import glob
-import json
+import tomllib
 import pandas as pd
 from data_processing import read_ais, complement_trajectory
 from distance_calculation import calculate_shortest_distance, haversine
@@ -10,16 +10,16 @@ from visualization import plot_geolocation
 from audio_processing import cut_wav_and_make_metadata
 
 
-def read_json_file(file_path):
+def read_toml_file(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
-        data = json.load(file)
+        data = tomllib.load(file)
     return data
 
 
-def main(ais_path, wav_path, json_path, flag_fig, flag_movie, flag_csv):
+def main(ais_path, wav_path, toml_path, flag_fig, flag_movie, flag_csv):
     ais_list = natsorted(glob.glob(f"{ais_path}/*.csv"))
     wav_list = natsorted(glob.glob(f"{wav_path}/*.WAV"))
-    meta_data = read_json_file(json_path)
+    meta_data = read_toml_file(toml_path)
     start_tim = pd.to_datetime(
         f"{meta_data['observation_info']['date_info']['start_date']} {meta_data['observation_info']['date_info']['start_time']}"
     )
@@ -68,18 +68,31 @@ def main(ais_path, wav_path, json_path, flag_fig, flag_movie, flag_csv):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ais_path", type=str, help="Path to the AIS folder.")
-    parser.add_argument("--wav_path", type=str, help="Path to the WAV folder.")
     parser.add_argument(
-        "--json_path", type=str, help="Path to the JSON metadata file."
+        "-a", "--ais_path", type=str, help="Path to the AIS folder."
     )
     parser.add_argument(
-        "--fig_flag", type=bool, help="Flag for making figures.", default=False
+        "-w", "--wav_path", type=str, help="Path to the WAV folder."
     )
     parser.add_argument(
-        "--movie_flag", type=bool, help="Flag for making movies.", default=False
+        "-t", "--toml_path", type=str, help="Path to the TOML metadata file."
     )
     parser.add_argument(
+        "-ff",
+        "--fig_flag",
+        type=bool,
+        help="Flag for making figures.",
+        default=False,
+    )
+    parser.add_argument(
+        "-mf",
+        "--movie_flag",
+        type=bool,
+        help="Flag for making movies.",
+        default=False,
+    )
+    parser.add_argument(
+        "cf",
         "--csv_flag",
         type=bool,
         help="Flag for making CSV files.",
@@ -90,7 +103,7 @@ if __name__ == "__main__":
     main(
         args.ais_path,
         args.wav_path,
-        args.json_path,
+        args.toml_path,
         args.fig_flag,
         args.movie_flag,
         args.csv_flag,
