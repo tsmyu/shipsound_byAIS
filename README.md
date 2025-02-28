@@ -57,7 +57,7 @@ python main.py --ais_path <path_to_ais_data> --wav_path <path_to_wav_data> --jso
 
 - --ais_path: Path to the folder containing AIS data CSV files.
 - --wav_path: Path to the folder containing WAV audio files.
-- --json_path: Path to the metadata JSON file.
+- --toml_path: Path to the metadata TOML file.
 - --fig_flag: Set to True if you want to generate vessel trajectory plots. Under constraction.
 - --movie_flag: Set to True if you want to create an animation of vessel trajectories. Under constraction.
 - --csv_flag: Set to True if you want to output CSV files with calculated distances.
