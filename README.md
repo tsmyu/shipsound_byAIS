@@ -14,10 +14,6 @@ This project is designed to process AIS (Automatic Identification System) data, 
 ├── config.toml               # Configuration file for parameters and flags
 ├── requirements.txt          # Dependencies required for the project
 ├── test/                     # Directory containing unit tests
-│   ├── test_visualization.py
-│   └── run_tests.py          # Script to run all tests
-├── results/                  # Default output directory for CSV files and plots (ignored by git)
-├── spectrograms/             # Default output directory for spectrogram images (ignored by git)
 ├── Cases_of_caution.md       # Notes on development practices and optimization
 ├── .gitignore                # Specifies intentionally untracked files for Git
 └── README.md                 # Project documentation (this file)
