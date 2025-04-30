@@ -133,7 +133,7 @@ def plot_mother_source_spectrogram(
     distances_df_list,
     record_start_time,
     output_dir,
-    vis_config,  # Add config dictionary argument
+    vis_config,  # Config dictionary now includes 'cut_margin_minutes'
 ):
     """
     Creates a time-averaged spectrogram for each mother source WAV file by processing
@@ -150,16 +150,18 @@ def plot_mother_source_spectrogram(
         vis_config (dict): Dictionary containing visualization parameters from config.toml.
     """
     # Load parameters from config
-    chunk_duration_seconds = vis_config.get(
-        "chunk_duration_seconds", 600
-    )  # Default 10 mins
+    chunk_duration_seconds = vis_config.get("chunk_duration_seconds", 600)
     nperseg = vis_config.get("spectrogram_nperseg", 4096)
-    noverlap = nperseg // 2  # Derived, or add spectrogram_noverlap to config?
+    noverlap = nperseg // 2
     max_freq_bins = vis_config.get("plot_max_freq_bins", 200)
     db_min = vis_config.get("plot_db_min", -80)
     db_max = vis_config.get("plot_db_max", -10)
     max_cuts_to_display = vis_config.get("plot_max_cuts", 15)
     plot_dpi = vis_config.get("plot_dpi", 150)
+    # Get cut_margin_minutes from the passed vis_config
+    cut_margin_min = vis_config.get(
+        "cut_margin_minutes", 1
+    )  # Default to 1 if not found
 
     # Create a directory for spectrograms if it doesn't exist
     spec_output_dir = os.path.join(output_dir, "spectrograms")
@@ -436,8 +438,13 @@ def plot_mother_source_spectrogram(
                         continue
 
                     min_distance_time = row["min_distance_time"]
-                    start_cut_time_abs = min_distance_time - pd.Timedelta(minutes=1)
-                    end_cut_time_abs = min_distance_time + pd.Timedelta(minutes=1)
+                    # Use cut_margin_min from vis_config here
+                    start_cut_time_abs = min_distance_time - pd.Timedelta(
+                        minutes=cut_margin_min
+                    )
+                    end_cut_time_abs = min_distance_time + pd.Timedelta(
+                        minutes=cut_margin_min
+                    )
 
                     # Check if cut overlaps with the file's time range
                     if (start_cut_time_abs < file_end_time_abs) and (

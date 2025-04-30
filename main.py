@@ -54,13 +54,26 @@ def main(
 ):
     # Load configuration first
     config = load_config(config_path)
+    if config is None:
+        print("Exiting due to configuration loading failure.")
+        return
+    print("Configuration loaded successfully.")
+
+    # Extract necessary sub-configs
+    vis_config = config.get("visualization", {})
+    audio_config = config.get("audio_processing", {})
+
+    # Add cut_margin_minutes from audio_config to vis_config for plot_mother_source_spectrogram
+    vis_config["cut_margin_minutes"] = audio_config.get(
+        "cut_margin_minutes", 1
+    )  # Default to 1 if not found
 
     ais_list = natsorted(glob.glob(f"{ais_path}/*.csv"))
     wav_list = natsorted(glob.glob(f"{wav_path}/*.WAV"))
     meta_data = read_toml_file(toml_path)
     if meta_data is None:
         print("Error: Metadata could not be loaded. Exiting.")
-        return  # Or exit(1)
+        return
 
     # Use the provided record_start_time parameter instead of metadata.toml
     start_tim = pd.to_datetime(record_start_time)
@@ -86,7 +99,7 @@ def main(
 
         ais_df = read_ais(ais_data)
         if flag_fig:
-            # Pass relevant config section to plot_geolocation if needed later
+            # Pass vis_config if plot_geolocation needs it in the future
             plot_geolocation(idx + 1, ais_df, record_pos, output_dir)
 
         comp_df = complement_trajectory(ais_data)
@@ -101,7 +114,7 @@ def main(
                 os.path.join(output_dir, f"distances_{idx+1}.csv"), index=False
             )
 
-        # Pass relevant config section to audio_processing if needed later
+        # Pass audio_config to audio_processing
         cut_wav_and_make_metadata(
             wav_list,
             meta_data,
@@ -110,7 +123,7 @@ def main(
             pd.DataFrame(),  # You can handle the distance list as needed.
             output_dir,
             record_pos,
-            config["audio_processing"],  # Pass audio config
+            audio_config,  # Pass audio config dictionary
         )
 
     # Create mother source spectrograms with cut indicators if flag_fig is True
@@ -122,13 +135,13 @@ def main(
         )
         os.makedirs(overall_output_dir, exist_ok=True)
 
-        # Call the spectrogram function with all distance DataFrames and config
+        # Call the spectrogram function with all distance DataFrames and the modified vis_config
         plot_mother_source_spectrogram(
             wav_path,
             all_distances_dfs,
             start_tim,
             overall_output_dir,
-            config["visualization"],  # Pass visualization config
+            vis_config,  # Pass the modified visualization config including cut_margin_minutes
         )
 
 
