@@ -38,7 +38,8 @@ def complement_trajectory(data):
 
     for _, group in data.groupby("mmsi"):
         group.set_index("dt_pos_utc", inplace=True)
-        group_resampled = group.resample("1S").interpolate().ffill()
+        resampled = group.resample("1s")
+        group_resampled = resampled.interpolate().ffill()
         resampled_data_list.append(group_resampled)
 
     resampled_data = pd.concat(resampled_data_list).reset_index()

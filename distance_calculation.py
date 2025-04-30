@@ -37,13 +37,26 @@ def calculate_shortest_distance(df, record_pos, record_depth):
 
     Returns:
         list: List of dictionaries containing information on the shortest distances between vessels and the recording position.
+
+    Raises:
+        ValueError: If 'length' or 'width' columns are not available in the dataframe.
     """
+    # 最初にカラムの存在確認
+    required_columns = ["length", "width"]
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(f"Required columns missing from dataframe: {missing_columns}")
+
     distances = []
     for mmsi in df["mmsi"].unique():
         vessel_df = df[df["mmsi"] == mmsi]
         vessel_pos = vessel_df[["latitude", "longitude"]].values
         vessel_type = vessel_df["vessel_type"].values[0]
         vessel_name = vessel_df["vessel_name"].values[0]
+        # Get length and width
+        length = vessel_df["length"].values[0]
+        width = vessel_df["width"].values[0]
+
         record_pos_arr = np.tile(record_pos, (len(vessel_pos), 1))
         dist = np.array(
             [
@@ -60,6 +73,8 @@ def calculate_shortest_distance(df, record_pos, record_depth):
                 "mmsi": mmsi,
                 "vessel_name": vessel_name,
                 "vessel_type": vessel_type,
+                "length": length,
+                "width": width,
                 "min_distance_idx": min_dist_idx,
                 "min_distance [m]": min_dist,
                 "min_distance_pos": min_dist_pos,

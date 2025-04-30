@@ -25,4 +25,5 @@ seaborn==0.13.2
 six==1.16.0
 soundfile==0.12.1
 threadpoolctl==3.2.0
+tomli==2.2.1
 tzdata==2024.1
