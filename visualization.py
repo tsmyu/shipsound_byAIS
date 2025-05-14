@@ -40,11 +40,11 @@ def plot_geolocation(idx, df, record_pos, output_dir):
 
     # 録音位置をプロット
     ax.scatter(
-        record_pos[0], record_pos[1], c="blue", label="rec_pos", marker="*", s=100
+        record_pos[1], record_pos[0], c="blue", label="rec_pos", marker="*", s=100
     )  # Made color explicit and larger
     ax.text(
-        record_pos[0],
         record_pos[1],
+        record_pos[0],
         "rec_pos",
         fontsize=10,
         ha="right",
@@ -97,26 +97,26 @@ def plot_geolocation(idx, df, record_pos, output_dir):
             # 各位置に時間情報をテキストとして表示 (Consider reducing frequency if too cluttered)
             # Add only start and end times? Or every Nth point?
             # For now, keep as is, but be aware it can get cluttered.
-            for _, row in vessel_df.iterrows():
-                # NaNや無限大でないことを再確認 (Redundant check, already filtered)
-                ax.text(
-                    row["longitude"],
-                    row["latitude"],
-                    row["dt_pos_utc"].strftime(
-                        "%H:%M:%S"
-                    ),  # Shorter time format for points
-                    fontsize=7,  # Smaller font
-                    ha="left",
-                    va="top",
-                    color=color,
-                    alpha=0.8,
-                )
+            # for _, row in vessel_df.iterrows():
+            #     # NaNや無限大でないことを再確認 (Redundant check, already filtered)
+            #     ax.text(
+            #         row["longitude"],
+            #         row["latitude"],
+            #         row["dt_pos_utc"].strftime(
+            #             "%H:%M:%S"
+            #         ),  # Shorter time format for points
+            #         fontsize=7,  # Smaller font
+            #         ha="left",
+            #         va="top",
+            #         color=color,
+            #         alpha=0.8,
+            #     )
 
     # 凡例は船舶がある場合のみ表示
-    if handles:
-        ax.legend(
-            handles, labels, bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=8
-        )
+    # if handles:
+    #     ax.legend(
+    #         handles, labels, bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=8
+    #     )
 
     # Add grid
     ax.grid(True, linestyle="--", alpha=0.6)

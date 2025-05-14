@@ -33,13 +33,25 @@ Includes functions for generating visualizations:
 - **Time-Averaged Spectrograms:** Display the frequency content of the mother source WAV file over its entire duration. For long files, the spectrogram represents time-averaged power spectral density to manage memory usage. Vertical lines indicate the calculated cut sections for nearby vessels.
 
 ### `audio_processing.py`
-Contains functions to cut WAV audio files based on calculated time ranges (derived from vessel proximity) and generate corresponding metadata appendix files.
+Contains functions to cut WAV audio files based on calculated time ranges (derived from vessel proximity) and generate corresponding metadata appendix files. The cutting process considers multiple conditions:
+
+1. **Time Range Selection:** The time range for each cut is centered around the time of minimum distance between the vessel and recording position.
+2. **Distance Threshold:** Only vessels that come within a configurable maximum distance (`max_cut_distance` in config.toml) are considered for cutting.
+3. **Isolation Condition:** A vessel segment is only cut when, at its time of minimum distance, it is the closest vessel to the recording position (compared to all other vessels).
+4. **Margin Configuration:** The time margin before and after the minimum distance point is configurable (`cut_margin_minutes` in config.toml).
+
+The cut WAV files are stored with metadata about the vessel, including MMSI, vessel type, vessel name, minimum distance, and timestamps.
 
 ### `main.py`
 The main script that integrates all modules. It reads the configuration from `config.toml`, executes the pipeline (reading data, calculating distances, optionally creating visualizations and cutting WAV files based on the config), and saves the results.
 
 ### `config.toml`
 A configuration file using the TOML format to set parameters for various processing steps, such as file paths, calculation thresholds, plot settings, and output flags (e.g., whether to generate figures or cut audio). This allows easy modification of the project's behavior without changing the code.
+
+Key audio processing parameters include:
+- `cut_margin_minutes`: The time margin (in minutes) before and after the point of minimum distance for WAV cutting
+- `max_cut_distance`: Maximum distance threshold (in meters) for vessel consideration
+- `check_other_vessels`: Whether to check if a vessel is the closest at its minimum distance time
 
 ## Requirements
 
@@ -52,17 +64,98 @@ A configuration file using the TOML format to set parameters for various process
 
 ## Usage
 
-To execute the pipeline, run the `main.py` script, providing the path to the configuration file:
+To execute the pipeline, run the `main.py` script, providing the necessary command-line arguments:
 
 ```bash
-python main.py --config_path <path_to_your_config.toml>
+python main.py -a AIS_PATH -w WAV_PATH -m TOML_PATH -t RECORD_START_TIME [-c CONFIG_PATH] [-ff] [-mf] [-cf]
 ```
 
-### Arguments
+### Command-line Arguments
 
-- `-c`, `--config_path`: Path to the configuration TOML file. This file dictates input paths, output behavior (figure generation, audio cutting, CSV output), and various processing parameters.
+The script accepts the following arguments:
 
-All other operational parameters (like AIS paths, WAV paths, time settings, output flags `fig_flag`, `csv_flag`, etc.) should be set within the `config.toml` file.
+- `-a`, `--ais_path` (required): Path to the folder containing AIS data CSV files.
+- `-w`, `--wav_path` (required): Path to the folder containing WAV audio files.
+- `-m`, `--toml_path` (required): Path to the TOML metadata file with observation information.
+- `-t`, `--record_start_time` (required): Record start time in ISO format (e.g., '2024-03-19T06:53:00').
+- `-c`, `--config_path` (optional): Path to the configuration TOML file. Defaults to 'config.toml'.
+- `-ff`, `--fig_flag` (flag): Generate visualization figures (geolocation plots and spectrograms).
+- `-mf`, `--movie_flag` (flag): Generate movies (not currently implemented).
+- `-cf`, `--csv_flag` (flag): Save distance calculation results as CSV files.
+
+Example:
+```bash
+python main.py -a ./data/ais -w ./data/wav -m ./metadata.toml -t 2024-03-19T06:53:00 -c ./config.toml -ff -cf
+```
+
+### Configuration File
+
+The `config.toml` file contains several sections for different aspects of the processing pipeline:
+
+#### General Settings
+
+```toml
+[general]
+# This section can contain general settings
+```
+
+#### Audio Processing Parameters
+
+```toml
+[audio_processing]
+# Time margin in minutes before and after minimum distance time
+cut_margin_minutes = 5
+
+# Maximum distance threshold (meters) for WAV cutting
+# Vessels farther than this distance will be skipped
+max_cut_distance = 10000.0
+
+# Enable checking if vessel is the closest at its minimum distance time
+# When true, a vessel will only be cut if it's the closest vessel at its minimum distance time
+check_other_vessels = true
+```
+
+#### Visualization Settings
+
+```toml
+[visualization]
+# Parameters for time-averaged spectrograms
+chunk_duration_seconds = 300  # Duration of chunks for processing
+spectrogram_nperseg = 1024    # Segment length for STFT
+
+# Plotting appearance
+plot_max_freq_bins = 200      # Maximum frequency bins to display
+plot_db_min = -80             # Minimum dB level for colormap
+plot_db_max = -10             # Maximum dB level for colormap
+plot_max_cuts = 15            # Maximum number of cut annotations to display
+plot_dpi = 150                # DPI for saving images
+```
+
+### Common Use Cases
+
+#### Generate Only Visualizations
+
+To generate only visualizations without cutting WAV files:
+
+```bash
+python main.py -a ./data/ais -w ./data/wav -m ./metadata.toml -t 2024-03-19T06:53:00 -ff
+```
+
+#### Process and Save Results as CSV
+
+To process the data and save the distance calculation results without visualizations:
+
+```bash
+python main.py -a ./data/ais -w ./data/wav -m ./metadata.toml -t 2024-03-19T06:53:00 -cf
+```
+
+#### Full Processing with Custom Configuration
+
+To run the full pipeline with all features enabled using a custom configuration file:
+
+```bash
+python main.py -a ./data/ais -w ./data/wav -m ./metadata.toml -t 2024-03-19T06:53:00 -c ./custom_config.toml -ff -cf
+```
 
 ## Visualization Features
 

@@ -42,11 +42,33 @@ def cut_wav_file(
 
         # 使用するWAVファイルを決定
         mother_source_idx = current_wav_index
-        if data_sample_num < start_sample + (end_sample - start_sample) / 2:
-            mother_source = os.path.basename(wav_file0)
-        else:
+        wav_file0_samples = len(data0)  # 1つ目のWAVファイルのサンプル数
+        mid_point = data_sample_num + wav_file0_samples  # 2つのWAVファイルの境界点
+
+        print(
+            f"DEBUG: data_sample_num = {data_sample_num}, wav_file0_samples = {wav_file0_samples}"
+        )
+        print(f"DEBUG: boundary = {mid_point}, start_sample = {start_sample}")
+
+        # 切り出しが主に2つ目のファイルに含まれるかどうかを判断
+        # 切り出しの開始位置が1つ目のファイルの終了位置より後ろにある場合、2つ目のファイルを使用
+        if start_sample >= mid_point:
             mother_source = os.path.basename(wav_file1)
             mother_source_idx = current_wav_index + 1
+            # 2つ目のファイルの開始位置からの相対位置を計算
+            cut_start_in_mother = start_sample - mid_point
+            print(
+                f"DEBUG: 母ファイル選択: wav_file1 = {mother_source}, start_sample = {start_sample}, mid_point = {mid_point}"
+            )
+            print(
+                f"DEBUG: cut_start_in_mother = start_sample - mid_point = {start_sample} - {mid_point} = {cut_start_in_mother}"
+            )
+        else:
+            mother_source = os.path.basename(wav_file0)
+            cut_start_in_mother = start_sample - data_sample_num
+            print(
+                f"DEBUG: 母ファイル選択: wav_file0 = {mother_source}, cut_start_in_mother = {cut_start_in_mother}"
+            )
 
         metadata_for_dis["source_info"]["mother_source_name"] = mother_source
 
@@ -67,15 +89,17 @@ def cut_wav_file(
         # 母ファイル内での切り出し開始時間を計算
         # start_sampleは記録開始からの位置、data_sample_numは現在処理中のファイルの開始位置
         # 現在のファイルの開始位置からの相対位置を計算し、それに基づいてcut_source_start_time_in_mother_sourceを設定
-        cut_start_in_mother = (
-            start_sample - data_sample_num
-        )  # 母ファイル内のサンプル位置
         cut_seconds_in_mother = cut_start_in_mother / samplerate  # 秒数に変換
 
         # 秒数を時:分:秒形式に変換
         hours, remainder = divmod(cut_seconds_in_mother, 3600)
         minutes, seconds = divmod(remainder, 60)
-        time_format = f"{int(hours):02d}:{int(minutes):02d}:{seconds:.2f}"
+        # 秒も2桁でフォーマット（整数部分が1桁の場合は0パディング）
+        seconds_int = int(seconds)
+        seconds_frac = seconds - seconds_int
+        time_format = f"{int(hours):02d}:{int(minutes):02d}:{seconds_int:02d}{seconds_frac:.2f}".replace(
+            "0.", "."
+        )
 
         metadata_for_dis["source_info"][
             "cut_source_start_time_in_mother_source"
@@ -116,6 +140,13 @@ def cut_wav_and_make_metadata(
     """
     # Load parameters from config
     cut_margin_minutes = audio_config.get("cut_margin_minutes", 1)  # Default 1 minute
+    # 新しいパラメータを読み込み
+    max_cut_distance = audio_config.get(
+        "max_cut_distance", float("inf")
+    )  # デフォルトは無限大（制限なし）
+    check_other_vessels = audio_config.get(
+        "check_other_vessels", False
+    )  # デフォルトはFalse
 
     record_start_time = pd.to_datetime(start_tim)
     wav_output_dir = os.path.join(output_dir, "wav")
@@ -130,6 +161,54 @@ def cut_wav_and_make_metadata(
             wav_durations.append(duration)
 
     for id, distance in distances.iterrows():
+        # 条件1: 最短距離が設定した距離以下かチェック
+        if distance["min_distance [m]"] > max_cut_distance:
+            print(
+                f"船舶 {distance.get('vessel_name', 'Unknown')} (MMSI: {distance['mmsi']})の最短距離が設定上限を超えています: {distance['min_distance [m]']:.2f}m > {max_cut_distance:.2f}m"
+            )
+            continue  # 次の船舶へ
+
+        # 条件2: 他の船舶との距離比較をチェック（必要な場合）
+        if check_other_vessels and not distance_list.empty:
+            min_distance_time = distance["min_distance_time"]
+            target_mmsi = distance["mmsi"]
+
+            # 対象船舶の最短距離時刻における他の船舶の距離を取得
+            # 各船舶について、min_distance_timeに最も近い時刻のデータを抽出
+            is_closest_vessel = True
+            for other_mmsi in distances["mmsi"].unique():
+                if other_mmsi == target_mmsi:  # 自分自身はスキップ
+                    continue
+
+                # 対象船舶の最短距離時刻に最も近い時刻の他船舶データを取得
+                other_vessel_data = distance_list[distance_list["mmsi"] == other_mmsi]
+                if other_vessel_data.empty:
+                    continue
+
+                # 時間差を計算して最も近いレコードを特定
+                # SettingWithCopyWarningを防ぐために.locを使用
+                other_vessel_data = other_vessel_data.copy()
+                other_vessel_data["time_diff"] = abs(
+                    other_vessel_data["dt_pos_utc"] - min_distance_time
+                )
+                closest_record = other_vessel_data.loc[
+                    other_vessel_data["time_diff"].idxmin()
+                ]
+
+                # 距離を比較 - 他船舶の距離が対象船舶より近ければフラグをFalseに
+                if closest_record["distance [m]"] < distance["min_distance [m]"]:
+                    print(
+                        f"船舶 {distance.get('vessel_name', 'Unknown')} (MMSI: {target_mmsi})の最短距離時刻に、"
+                        f"他の船舶 (MMSI: {other_mmsi})が対象船舶より録音位置に近い: "
+                        f"{closest_record['distance [m]']:.2f}m < {distance['min_distance [m]']:.2f}m"
+                    )
+                    is_closest_vessel = False
+                    break
+
+            if not is_closest_vessel:
+                continue  # 次の船舶へ
+
+        # すべての条件を通過したので、WAVファイルをカット
         metadata_for_dis = meta_data.copy()
         print(f"target distance data:{id}/{distances.shape[0]}")
         min_distance_time = distance["min_distance_time"]

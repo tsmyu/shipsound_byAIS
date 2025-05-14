@@ -100,8 +100,8 @@ def main(
         ais_df = read_ais(ais_data)
         if flag_fig:
             # Pass vis_config if plot_geolocation needs it in the future
+            print("plot geolocation.....")
             plot_geolocation(idx + 1, ais_df, record_pos, output_dir)
-
         comp_df = complement_trajectory(ais_data)
         distances = calculate_shortest_distance(comp_df, record_pos, record_depth)
         distances_df = pd.DataFrame(distances)
