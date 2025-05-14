@@ -6,14 +6,20 @@ This project is designed to process AIS (Automatic Identification System) data, 
 
 ```bash
 .
-├── audio_processing.py       # Handles WAV file cutting based on timestamps
-├── data_processing.py        # Functions for reading and processing AIS data
-├── distance_calculation.py   # Functions for calculating vessel distances
-├── visualization.py          # Plotting geolocation and time-averaged spectrograms
+├── audio_processing.py       # Audio processing: WAV file cutting and metadata generation
+├── data_processing.py        # Data processing: reading and interpolating AIS data
+├── distance_calculation.py   # Distance calculation between vessels and recording position
+├── visualization.py          # Visualization: geographical plots and spectrograms
 ├── main.py                   # Main execution script coordinating the workflow
 ├── config.toml               # Configuration file for parameters and flags
+├── metadata.toml             # Metadata template
 ├── requirements.txt          # Dependencies required for the project
 ├── test/                     # Directory containing unit tests
+│   ├── test_audio_processing.py  # Tests for audio processing
+│   ├── README.md                 # Test specifications 
+│   └── test_output/              # Test output directory (auto-generated)
+├── ais_example/              # Sample AIS data
+├── wav_example/              # Sample WAV files
 ├── Cases_of_caution.md       # Notes on development practices and optimization
 ├── .gitignore                # Specifies intentionally untracked files for Git
 └── README.md                 # Project documentation (this file)
@@ -81,119 +87,4 @@ The script accepts the following arguments:
 - `-c`, `--config_path` (optional): Path to the configuration TOML file. Defaults to 'config.toml'.
 - `-ff`, `--fig_flag` (flag): Generate visualization figures (geolocation plots and spectrograms).
 - `-mf`, `--movie_flag` (flag): Generate movies (not currently implemented).
-- `-cf`, `--csv_flag` (flag): Save distance calculation results as CSV files.
-
-Example:
-```bash
-python main.py -a ./data/ais -w ./data/wav -m ./metadata.toml -t 2024-03-19T06:53:00 -c ./config.toml -ff -cf
-```
-
-### Configuration File
-
-The `config.toml` file contains several sections for different aspects of the processing pipeline:
-
-#### General Settings
-
-```toml
-[general]
-# This section can contain general settings
-```
-
-#### Audio Processing Parameters
-
-```toml
-[audio_processing]
-# Time margin in minutes before and after minimum distance time
-cut_margin_minutes = 5
-
-# Maximum distance threshold (meters) for WAV cutting
-# Vessels farther than this distance will be skipped
-max_cut_distance = 10000.0
-
-# Enable checking if vessel is the closest at its minimum distance time
-# When true, a vessel will only be cut if it's the closest vessel at its minimum distance time
-check_other_vessels = true
-```
-
-#### Visualization Settings
-
-```toml
-[visualization]
-# Parameters for time-averaged spectrograms
-chunk_duration_seconds = 300  # Duration of chunks for processing
-spectrogram_nperseg = 1024    # Segment length for STFT
-
-# Plotting appearance
-plot_max_freq_bins = 200      # Maximum frequency bins to display
-plot_db_min = -80             # Minimum dB level for colormap
-plot_db_max = -10             # Maximum dB level for colormap
-plot_max_cuts = 15            # Maximum number of cut annotations to display
-plot_dpi = 150                # DPI for saving images
-```
-
-### Common Use Cases
-
-#### Generate Only Visualizations
-
-To generate only visualizations without cutting WAV files:
-
-```bash
-python main.py -a ./data/ais -w ./data/wav -m ./metadata.toml -t 2024-03-19T06:53:00 -ff
-```
-
-#### Process and Save Results as CSV
-
-To process the data and save the distance calculation results without visualizations:
-
-```bash
-python main.py -a ./data/ais -w ./data/wav -m ./metadata.toml -t 2024-03-19T06:53:00 -cf
-```
-
-#### Full Processing with Custom Configuration
-
-To run the full pipeline with all features enabled using a custom configuration file:
-
-```bash
-python main.py -a ./data/ais -w ./data/wav -m ./metadata.toml -t 2024-03-19T06:53:00 -c ./custom_config.toml -ff -cf
-```
-
-## Visualization Features
-
-### Vessel Trajectory Plots
-If enabled in `config.toml` (`fig_flag = true`), the program generates plots showing vessel trajectories and their positions relative to the recording position. Saved typically in the `results/` directory.
-
-### Spectrograms with Cut Indicators
-If enabled in `config.toml` (`fig_flag = true`), the program generates spectrograms for each mother source WAV file. These are saved in the `spectrograms/` subfolder within the output directory specified in the config. Each spectrogram includes:
-
-- **Full Audio Visualization:** Displays the frequency content over the entire duration of the mother source file. For long files (> memory/processing limits), this is a **time-averaged spectrogram**, showing the average power spectrum over configured time chunks (e.g., 10 minutes).
-- **Cut Indicators:** Vertical dashed lines showing the calculated start and end times for audio cuts corresponding to nearby vessels.
-- **Labels:** Information about the vessel associated with each cut (e.g., name, MMSI, minimum distance) is displayed near the corresponding lines.
-- **Color Coding:** Different colors may be used to distinguish cuts for different vessels.
-
-This visualization helps understand which time segments in the original audio correspond to specific vessel passages, even for very long recordings.
-
-## Tests
-
-Automated tests are included to verify the functionality of different modules.
-
-To run all tests, execute the `run_tests.py` script from the project's root directory:
-
-```bash
-python -m unittest discover -s test
-```
-or simply:
-```bash
-python test/run_tests.py
-```
-
-To run a specific test file (e.g., `test_visualization.py`):
-
-```bash
-python -m unittest test.test_visualization
-```
-
-When adding new features or fixing bugs, please add corresponding tests in the `test/` directory (using filenames starting with `test_`) and ensure all tests pass.
-
-## Development Notes
-
-For guidelines on development practices, coding style, and notes on optimization efforts (especially regarding performance and memory usage), please refer to the `Cases_of_caution.md` file.
+- `
