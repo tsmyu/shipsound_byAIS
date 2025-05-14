@@ -13,13 +13,26 @@ This project is designed to process AIS (Automatic Identification System) data, 
 ├── main.py                   # Main execution script coordinating the workflow
 ├── config.toml               # Configuration file for parameters and flags
 ├── metadata.toml             # Metadata template
+├── metadata_izuoshima.toml   # Location-specific metadata file 
+├── check_csv.py              # CSV data checking utility
+├── test_plot_geo.py          # Geographical plot testing utility
+├── test_plot_geo_debug.py    # Debug version of geographical plot utility
+├── test_visualization.py     # Visualization testing utility
 ├── requirements.txt          # Dependencies required for the project
 ├── test/                     # Directory containing unit tests
 │   ├── test_audio_processing.py  # Tests for audio processing
+│   ├── test_data_processing.py   # Tests for data processing
+│   ├── test_distance_calculation.py # Tests for distance calculations
+│   ├── test_main.py              # Tests for main script
+│   ├── test_visualization.py     # Tests for visualization
+│   ├── run_tests.py              # Test runner script
 │   ├── README.md                 # Test specifications 
-│   └── test_output/              # Test output directory (auto-generated)
+│   └── __init__.py               # Package initialization file
+├── test_output/              # Test output directory
+├── test_output_debug/        # Debug test output directory
 ├── ais_example/              # Sample AIS data
 ├── wav_example/              # Sample WAV files
+├── prompt/                   # Project prompt information
 ├── Cases_of_caution.md       # Notes on development practices and optimization
 ├── .gitignore                # Specifies intentionally untracked files for Git
 └── README.md                 # Project documentation (this file)
