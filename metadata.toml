@@ -16,6 +16,11 @@ position = [
 ] # record position ([latitude, longitude]) [List]
 installation_depth = 100.0 # deploy depth [float]
 water_depth = 150.0 # depth [float]
+precip_mm = 0.0
+wind_avg_mps = 0.0
+wind_gust_mps = 0.0
+station_distance_km = 0.0
+amedas_id = 0
 
 [observation_info.machine_info]
 machine = "hydrophone"       # [string]
@@ -28,6 +33,7 @@ file_format = "WAV" # file format [string]
 fs = 44100          # sampling frequency (Hz) [int]
 bit = 16            # bit number [int]
 channel_num = 1   # channel number [int]
+sensitivity = 176.3 # sensitivity (dB re. 1μPa) [float]
 amp = 10            # pre-amp. or amp. (dB) [int]
 highpass_filter = 0 # high pass filter frequency (Hz) [float]
 lowpass_filter = 0  # low pass filter frequency (Hz) [float]
@@ -51,7 +57,4 @@ reliability = 1             # [int]
                             # 3: The sound source is not definitively identified, but this is the most probable source.
                             # 4: The sound source is not identified and remains unknown.
                             # refer to Global inventory of species categorized by known underwater sonifery Looby et.al., 2023 (https://doi.org/10.1038/s41597-023-02745-4)
-precipitation = 0.0
-wind_speed = 0.0
-condition = ""              # the sound waves or rain conditions of Geophony. For instance, for waves, it would be the sea state, and for rain, it would be the amount of rainfall.
 appendix = ""               # comment

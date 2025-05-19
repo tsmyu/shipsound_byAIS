@@ -216,6 +216,12 @@ def cut_wav_and_make_metadata(
         margin_delta = datetime.timedelta(minutes=cut_margin_minutes)
         start_time = min_distance_time - margin_delta
         end_time = min_distance_time + margin_delta
+
+        # 切り出し開始時刻をTOMLファイルのstart_dateに設定
+        metadata_for_dis["observation_info"]["date_info"]["start_date"] = (
+            start_time.strftime("%Y-%m-%dT%H:%M:%S")
+        )
+
         data_sample_num = 0
         for idx in range(len(wav_list) - 1):
             sample_num, flag, meta_d, wav_name = cut_wav_file(

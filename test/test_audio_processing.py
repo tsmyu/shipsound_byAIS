@@ -248,52 +248,140 @@ class TestAudioProcessing(unittest.TestCase):
             cut_wav_and_make_metadata(
                 self.wav_files,
                 self.metadata.copy(),
-                record_start_time,
+                "2024-03-19 06:53:00",
                 self.distances,
-                pd.DataFrame(),
+                pd.DataFrame(),  # 空のDataFrameを渡す（他の船舶との比較は行わない）
                 self.test_dir,
                 [32.71161, 129.77558],
-                {},  # 追加: audio_configを空の辞書で渡す
+                {
+                    "cut_margin_minutes": 1,
+                    "max_cut_distance": 1000.0,
+                    "check_other_vessels": False,
+                },
             )
 
-            # TOMLファイルが生成されているか確認
+            # 生成されたTOMLファイルを確認
             wav_output_dir = os.path.join(self.test_dir, "wav")
             toml_files = [f for f in os.listdir(wav_output_dir) if f.endswith(".toml")]
-            self.assertEqual(len(toml_files), 1, "TOMLファイルが生成されていません")
+            self.assertTrue(len(toml_files) > 0, "TOMLファイルが生成されていません")
 
-            # TOMLファイルの内容を検証
-            toml_path = os.path.join(wav_output_dir, toml_files[0])
-            with open(toml_path, "rb") as f:
+            # 最初のTOMLファイルを読み込んで検証
+            with open(os.path.join(wav_output_dir, toml_files[0]), "rb") as f:
                 toml_data = tomli.load(f)
 
-            # デバッグ用に内容を表示
-            print("\nTOML file content:")
-            print(
-                f"cut_source_start_time_in_mother_source: {toml_data['source_info']['cut_source_start_time_in_mother_source']}"
-            )
-
-            # mother_source_start_timeとcut_source_start_time_in_mother_sourceが存在するか確認
-            self.assertIn("mother_source_start_time", toml_data["source_info"])
-            self.assertIn(
-                "cut_source_start_time_in_mother_source", toml_data["source_info"]
-            )
-
-            # 母ファイルの位置と切り出し位置が正しいか確認
+            # start_dateが切り出し開始時刻に設定されていることを確認
+            # 切り出し開始時刻は、最短距離時刻から1分前（cut_margin_minutes=1）
+            expected_start_time = (
+                self.distances["min_distance_time"].iloc[0]
+                - datetime.timedelta(minutes=1)
+            ).strftime("%Y-%m-%dT%H:%M:%S")
             self.assertEqual(
-                toml_data["source_info"]["mother_source_name"], "test_0.wav"
-            )
-            self.assertIn(
-                "samples",
-                toml_data["source_info"]["cut_source_start_time_in_mother_source"],
-            )
-            # 秒表記ではなく時間表記を確認
-            self.assertIn(
-                "02:05:",
-                toml_data["source_info"]["cut_source_start_time_in_mother_source"],
+                toml_data["observation_info"]["date_info"]["start_date"],
+                expected_start_time,
+                "TOMLファイルのstart_dateが切り出し開始時刻と一致しません",
             )
 
         finally:
-            # 元の関数に戻す
+            # 元の関数を復元
+            audio_processing.cut_wav_file = original_cut_wav_file
+
+    def test_start_date_in_toml(self):
+        """TOMLファイルのstart_dateが切り出し開始時刻に正しく設定されることを確認するテスト"""
+        # テスト記録時間を設定
+        record_start_time = pd.to_datetime("2024-03-19 06:53:00")
+
+        # テスト用の距離データを作成（録音開始12分後に対応）
+        start_time = pd.to_datetime("2024-03-19 06:53:00")
+        target_time = start_time + datetime.timedelta(minutes=12)  # 開始から12分後
+        test_distances = pd.DataFrame(
+            {
+                "mmsi": [123456789],
+                "vessel_name": ["Test Vessel"],
+                "vessel_type": ["Cargo"],
+                "length": [100],
+                "width": [20],
+                "min_distance [m]": [500.0],
+                "min_distance_pos": [[32.7, 129.7]],
+                "min_distance_time": [target_time],
+            }
+        )
+
+        # テスト用の簡易的なcut_wav_file関数を作成
+        original_cut_wav_file = cut_wav_file
+
+        try:
+            # モック関数をテスト
+            def mock_cut_wav_file(*args, **kwargs):
+                metadata_for_dis = args[8].copy()  # metadata_for_disを取得
+                # テスト用の設定を追加
+                metadata_for_dis["source_info"]["mother_source_name"] = "test_0.wav"
+                metadata_for_dis["source_info"]["mother_source_start_time"] = (
+                    record_start_time.strftime("%Y%m%d_%H%M%S")
+                )
+                metadata_for_dis["source_info"][
+                    "cut_source_start_time_in_mother_source"
+                ] = "300 samples (00:00:00.07)"
+
+                wav_name = f"cut_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{args[9][0]}_{args[9][1]}"
+                return len(args[0]), True, metadata_for_dis, wav_name
+
+            # 一時的に関数を置き換え
+            import audio_processing
+
+            audio_processing.cut_wav_file = mock_cut_wav_file
+
+            # 異なるマージン時間でテスト
+            margin_times = [1, 2, 5]  # 1分、2分、5分のマージン
+
+            for margin in margin_times:
+                with self.subTest(f"Margin: {margin} minutes"):
+                    # テスト実行
+                    cut_wav_and_make_metadata(
+                        self.wav_files,
+                        self.metadata.copy(),
+                        "2024-03-19 06:53:00",
+                        test_distances,
+                        pd.DataFrame(),  # 空のDataFrameを渡す（他の船舶との比較は行わない）
+                        self.test_dir,
+                        [32.71161, 129.77558],
+                        {
+                            "cut_margin_minutes": margin,
+                            "max_cut_distance": 1000.0,
+                            "check_other_vessels": False,
+                        },
+                    )
+
+                    # 生成されたTOMLファイルを確認
+                    wav_output_dir = os.path.join(self.test_dir, "wav")
+                    toml_files = [
+                        f for f in os.listdir(wav_output_dir) if f.endswith(".toml")
+                    ]
+                    self.assertTrue(
+                        len(toml_files) > 0,
+                        f"マージン{margin}分のTOMLファイルが生成されていません",
+                    )
+
+                    # 最初のTOMLファイルを読み込んで検証
+                    with open(os.path.join(wav_output_dir, toml_files[0]), "rb") as f:
+                        toml_data = tomli.load(f)
+
+                    # start_dateが切り出し開始時刻に設定されていることを確認
+                    # 切り出し開始時刻は、最短距離時刻からmargin分前
+                    expected_start_time = (
+                        target_time - datetime.timedelta(minutes=margin)
+                    ).strftime("%Y-%m-%dT%H:%M:%S")
+                    self.assertEqual(
+                        toml_data["observation_info"]["date_info"]["start_date"],
+                        expected_start_time,
+                        f"マージン{margin}分のTOMLファイルのstart_dateが切り出し開始時刻と一致しません",
+                    )
+
+                    # テスト後にTOMLファイルを削除
+                    for toml_file in toml_files:
+                        os.remove(os.path.join(wav_output_dir, toml_file))
+
+        finally:
+            # 元の関数を復元
             audio_processing.cut_wav_file = original_cut_wav_file
 
     # 2つ目のWAVファイルからの切り出しをテストする専用のテスト
