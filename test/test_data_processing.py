@@ -109,6 +109,124 @@ class TestDataProcessing(unittest.TestCase):
             any(abs(lat - mid_lat) < 0.005 for lat in vessel_a_df["latitude"])
         )
 
+    def test_complement_trajectory_plots_before_after(self):
+        """plot_before_after=True で補完前後の図が生成されることを確認"""
+        # 出力ディレクトリ
+        output_dir = os.path.join(self.temp_dir.name, "plots_out")
+        os.makedirs(output_dir, exist_ok=True)
+
+        # 記録位置（適当な座標）
+        record_pos = (32.71161, 129.77558)
+
+        # 関数実行（補完前後の図を出力）
+        _ = complement_trajectory(
+            self.test_csv_path,
+            record_pos=record_pos,
+            output_dir=output_dir,
+            plot_before_after=True,
+        )
+
+        # 期待ファイルの存在確認
+        before_png = os.path.join(output_dir, "traj_before.png")
+        after_png = os.path.join(output_dir, "traj_after.png")
+        self.assertTrue(os.path.exists(before_png))
+        self.assertTrue(os.path.exists(after_png))
+
+    def test_complement_trajectory_no_plots_when_flag_false(self):
+        """plot_before_after=False の場合は図が生成されないことを確認"""
+        output_dir = os.path.join(self.temp_dir.name, "plots_out2")
+        os.makedirs(output_dir, exist_ok=True)
+        record_pos = (32.71161, 129.77558)
+
+        _ = complement_trajectory(
+            self.test_csv_path,
+            record_pos=record_pos,
+            output_dir=output_dir,
+            plot_before_after=False,
+        )
+
+        before_png = os.path.join(output_dir, "traj_before.png")
+        after_png = os.path.join(output_dir, "traj_after.png")
+        self.assertFalse(os.path.exists(before_png))
+        self.assertFalse(os.path.exists(after_png))
+
+    def test_linear_interpolation_lat_lon(self):
+        """緯度・経度が線形補間されることを時刻を指定して厳密に検証"""
+        # 合成データ: 1船, 0秒と10秒の2点を与え、間を補間
+        t0 = pd.Timestamp("2024-01-01 00:00:00")
+        t1 = pd.Timestamp("2024-01-01 00:00:10")
+        df = pd.DataFrame(
+            {
+                "mmsi": [111111111, 111111111],
+                "vessel_name": ["V1", "V1"],
+                "vessel_type": ["Cargo", "Cargo"],
+                "length": [100, 100],
+                "width": [20, 20],
+                "latitude": [10.0, 11.0],
+                "longitude": [20.0, 22.0],
+                "dt_pos_utc": [t0, t1],
+            }
+        )
+        tmp_csv = os.path.join(self.temp_dir.name, "lin_int.csv")
+        df.to_csv(tmp_csv, index=False)
+
+        result = complement_trajectory(tmp_csv)
+        # 0〜10秒の11点（両端含む）が生成される
+        v = result[result["mmsi"] == 111111111].sort_values("dt_pos_utc")
+        self.assertEqual(len(v), 11)
+        # 元点は保持
+        self.assertAlmostEqual(v.iloc[0]["latitude"], 10.0)
+        self.assertAlmostEqual(v.iloc[0]["longitude"], 20.0)
+        self.assertAlmostEqual(v.iloc[-1]["latitude"], 11.0)
+        self.assertAlmostEqual(v.iloc[-1]["longitude"], 22.0)
+        # 4秒後の点を検証（線形補間）: lat=10.4, lon=20.8
+        t_mid = t0 + pd.Timedelta(seconds=4)
+        row_mid = v[v["dt_pos_utc"] == t_mid].iloc[0]
+        self.assertAlmostEqual(row_mid["latitude"], 10.4, places=6)
+        self.assertAlmostEqual(row_mid["longitude"], 20.8, places=6)
+        # 連続1秒刻みで単調増加
+        diffs = v["dt_pos_utc"].diff().dropna().dt.total_seconds().values
+        self.assertTrue((diffs == 1.0).all())
+
+    def test_interpolation_is_per_mmsi_and_no_cross_talk(self):
+        """MMSIごとに独立に補間され、範囲外の時刻が混入しないことを検証"""
+        ta0 = pd.Timestamp("2024-01-01 00:00:00")
+        ta1 = pd.Timestamp("2024-01-01 00:00:05")
+        tb0 = pd.Timestamp("2024-01-01 00:01:00")
+        tb1 = pd.Timestamp("2024-01-01 00:01:03")
+        df = pd.DataFrame(
+            {
+                "mmsi": [111, 111, 222, 222],
+                "vessel_name": ["A", "A", "B", "B"],
+                "vessel_type": ["Cargo", "Cargo", "Cargo", "Cargo"],
+                "length": [100, 100, 100, 100],
+                "width": [20, 20, 20, 20],
+                "latitude": [0.0, 0.5, 1.0, 1.2],
+                "longitude": [0.0, 0.5, 2.0, 2.3],
+                "dt_pos_utc": [ta0, ta1, tb0, tb1],
+            }
+        )
+        tmp_csv = os.path.join(self.temp_dir.name, "two_vessels.csv")
+        df.to_csv(tmp_csv, index=False)
+
+        result = complement_trajectory(tmp_csv)
+        a = result[result["mmsi"] == 111].sort_values("dt_pos_utc")
+        b = result[result["mmsi"] == 222].sort_values("dt_pos_utc")
+        # Aは0〜5秒で6点、Bは0〜3秒で4点（それぞれ自身の範囲のみ）
+        self.assertEqual(len(a), 6)
+        self.assertEqual(len(b), 4)
+        self.assertGreaterEqual(a["dt_pos_utc"].min(), ta0)
+        self.assertLessEqual(a["dt_pos_utc"].max(), ta1)
+        self.assertGreaterEqual(b["dt_pos_utc"].min(), tb0)
+        self.assertLessEqual(b["dt_pos_utc"].max(), tb1)
+        # いずれも1秒刻み
+        self.assertTrue(
+            (a["dt_pos_utc"].diff().dropna().dt.total_seconds() == 1.0).all()
+        )
+        self.assertTrue(
+            (b["dt_pos_utc"].diff().dropna().dt.total_seconds() == 1.0).all()
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

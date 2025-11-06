@@ -50,6 +50,9 @@ def calculate_shortest_distance(df, record_pos, record_depth):
     distances = []
     for mmsi in df["mmsi"].unique():
         vessel_df = df[df["mmsi"] == mmsi]
+        # Skip vessels with two or fewer AIS points (not enough data for analysis)
+        if len(vessel_df) <= 2:
+            continue
         vessel_pos = vessel_df[["latitude", "longitude"]].values
         vessel_type = vessel_df["vessel_type"].values[0]
         vessel_name = vessel_df["vessel_name"].values[0]
@@ -82,3 +85,42 @@ def calculate_shortest_distance(df, record_pos, record_depth):
             }
         )
     return distances
+
+
+def calculate_distance_timeseries(
+    df: pd.DataFrame, record_pos, record_depth: float
+) -> pd.DataFrame:
+    """
+    Compute per-timestamp distances from each vessel position to the recording position.
+
+    The distance matches the 3D metric used elsewhere: sqrt( haversine^2 + depth^2 ).
+
+    Args:
+        df (DataFrame): DataFrame with at least ['mmsi','dt_pos_utc','latitude','longitude'].
+        record_pos (tuple): (lat, lon) of recording position.
+        record_depth (float): Depth in meters.
+
+    Returns:
+        DataFrame: columns ['mmsi','dt_pos_utc','distance [m]']
+    """
+    if df.empty:
+        return pd.DataFrame(columns=["mmsi", "dt_pos_utc", "distance [m]"])
+
+    # Exclude vessels with two or fewer AIS points
+    df = df.groupby("mmsi").filter(lambda g: len(g) > 2)
+    if df.empty:
+        return pd.DataFrame(columns=["mmsi", "dt_pos_utc", "distance [m]"])
+
+    lat0, lon0 = record_pos
+    # Vectorized compute via list comprehension (clear and fast enough for per-second data)
+    distances = [
+        np.sqrt(haversine(lat, lon, lat0, lon0) ** 2 + record_depth**2)
+        for lat, lon in zip(df["latitude"].values, df["longitude"].values)
+    ]
+    return pd.DataFrame(
+        {
+            "mmsi": df["mmsi"].values,
+            "dt_pos_utc": df["dt_pos_utc"].values,
+            "distance [m]": distances,
+        }
+    )

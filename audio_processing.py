@@ -5,6 +5,7 @@ import json
 import tomli_w  # TOMLファイルの書き込み用ライブラリを追加
 import pandas as pd
 import numpy as np
+from wav_index import WavFileIndex
 
 
 def cut_wav_file(
@@ -31,13 +32,22 @@ def cut_wav_file(
     start_sample = int((start_time - record_start_time).total_seconds() * samplerate)
     end_sample = int((end_time - record_start_time).total_seconds() * samplerate)
 
+    # デバッグ出力をファイルに追記
+    with open("debug_log.txt", "a") as dbg:
+        dbg.write(
+            f"[DEBUG] start_sample={start_sample}, end_sample={end_sample}, data_sample_num={data_sample_num}, len(data)={len(data)}\n"
+        )
+
     if data_sample_num < start_sample and data_sample_num + len(data) > end_sample:
         print(f"cutting.....")
         cut_data = data[
             (start_sample - data_sample_num) : (end_sample - data_sample_num)
         ]
         wav_name = f"cut_{start_time.strftime('%Y%m%d_%H%M%S')}_{record_pos[0]}_{record_pos[1]}"
-        cut_file = os.path.join(output_dir, wav_name + ".wav")
+        # 出力先をoutput_dir/wavに修正
+        wav_output_dir = os.path.join(output_dir, "wav")
+        os.makedirs(wav_output_dir, exist_ok=True)
+        cut_file = os.path.join(wav_output_dir, wav_name + ".wav")
         sf.write(cut_file, cut_data, samplerate)
 
         # 使用するWAVファイルを決定
@@ -115,6 +125,69 @@ def cut_wav_file(
         return len(data0), False, metadata_for_dis, None
 
 
+def update_metadata_and_save_toml(meta_d, distance, wav_name, output_dir):
+    """
+    メタデータを更新し、TOMLファイルを保存する
+
+    Args:
+        meta_d (dict): 更新するメタデータ
+        distance (pd.Series): 船舶の距離情報
+        wav_name (str): 生成されたWAVファイル名
+        output_dir (str): 出力ディレクトリ
+    """
+    # Set the vessel sound source information
+    # Category for vessel sounds is Anthrophony (1)
+    meta_d["source_info"]["category"] = 1
+
+    # Set the vessel name as the sound source using the format: vessel_type(vessel_name)
+    vessel_type = (
+        distance["vessel_type"] if not pd.isna(distance["vessel_type"]) else "Unknown"
+    )
+    vessel_name = (
+        distance["vessel_name"] if not pd.isna(distance["vessel_name"]) else "Unknown"
+    )
+    meta_d["source_info"]["sound_source"] = f"{vessel_type}({vessel_name})"
+
+    # Reliability is 2 since we confirmed the vessel via AIS data
+    meta_d["source_info"]["reliability"] = 2
+
+    # Add condition information
+    meta_d["source_info"][
+        "condition"
+    ] = f"Ship distance: {distance['min_distance [m]']:.2f}m"
+
+    # Get ship length and width from AIS data if available
+    ship_length = (
+        distance["length"]
+        if "length" in distance.index and not pd.isna(distance["length"])
+        else "Unknown"
+    )
+    ship_width = (
+        distance["width"]
+        if "width" in distance.index and not pd.isna(distance["width"])
+        else "Unknown"
+    )
+
+    # Format vessel details for the appendix field including length and width
+    vessel_info_str = (
+        f"mmsi: {distance['mmsi']}, "
+        f"vessel_type: {vessel_type}, "
+        f"length: {ship_length}, "
+        f"width: {ship_width}, "
+        f"min_distance_m: {distance['min_distance [m]']}, "
+        f"min_distance_time: {distance['min_distance_time'].strftime('%Y-%m-%dT%H:%M:%S')}"
+    )
+
+    # Set appendix with vessel information
+    meta_d["source_info"]["appendix"] = vessel_info_str
+
+    # TOMLファイルを生成して保存
+    wav_output_dir = os.path.join(output_dir, "wav")
+    os.makedirs(wav_output_dir, exist_ok=True)
+    with open(os.path.join(wav_output_dir, f"{wav_name}.toml"), "wb") as f:
+        tomli_w.dump(meta_d, f)
+
+
 def cut_wav_and_make_metadata(
     wav_list,
     meta_data,
@@ -138,9 +211,12 @@ def cut_wav_and_make_metadata(
         record_pos (tuple): The recording position (latitude, longitude).
         audio_config (dict): Dictionary containing audio processing parameters from config.toml.
     """
+    # 出力ディレクトリを作成
+    wav_output_dir = os.path.join(output_dir, "wav")
+    os.makedirs(wav_output_dir, exist_ok=True)
+
     # Load parameters from config
     cut_margin_minutes = audio_config.get("cut_margin_minutes", 1)  # Default 1 minute
-    # 新しいパラメータを読み込み
     max_cut_distance = audio_config.get(
         "max_cut_distance", float("inf")
     )  # デフォルトは無限大（制限なし）
@@ -148,45 +224,41 @@ def cut_wav_and_make_metadata(
         "check_other_vessels", False
     )  # デフォルトはFalse
 
-    record_start_time = pd.to_datetime(start_tim)
-    wav_output_dir = os.path.join(output_dir, "wav")
-    os.makedirs(wav_output_dir, exist_ok=True)
-    record_type = meta_data["observation_info"]["record_info"]["channel_num"]
+    # WAVファイルのインデックスを構築
+    wav_index = WavFileIndex(wav_list, pd.to_datetime(start_tim))
 
-    # 各WAVファイルの継続時間（秒）を計算
-    wav_durations = []
-    for wav_file in wav_list:
-        with sf.SoundFile(wav_file) as f:
-            duration = len(f) / f.samplerate
-            wav_durations.append(duration)
+    # 最接近時刻でソート
+    sorted_distances = distances.sort_values("min_distance_time")
 
-    for id, distance in distances.iterrows():
+    # 前回の探索位置を記録
+    last_processed_wav_index = 0
+
+    # 処理済みのWAVファイルを記録
+    processed_wav_files = set()
+
+    for _, distance in sorted_distances.iterrows():
         # 条件1: 最短距離が設定した距離以下かチェック
         if distance["min_distance [m]"] > max_cut_distance:
             print(
-                f"船舶 {distance.get('vessel_name', 'Unknown')} (MMSI: {distance['mmsi']})の最短距離が設定上限を超えています: {distance['min_distance [m]']:.2f}m > {max_cut_distance:.2f}m"
+                f"船舶 {distance.get('vessel_name', 'Unknown')} (MMSI: {distance['mmsi']})の最短距離が設定上限を超えています: "
+                f"{distance['min_distance [m]']:.2f}m > {max_cut_distance:.2f}m"
             )
-            continue  # 次の船舶へ
+            continue
 
         # 条件2: 他の船舶との距離比較をチェック（必要な場合）
         if check_other_vessels and not distance_list.empty:
             min_distance_time = distance["min_distance_time"]
             target_mmsi = distance["mmsi"]
-
-            # 対象船舶の最短距離時刻における他の船舶の距離を取得
-            # 各船舶について、min_distance_timeに最も近い時刻のデータを抽出
             is_closest_vessel = True
+
             for other_mmsi in distances["mmsi"].unique():
-                if other_mmsi == target_mmsi:  # 自分自身はスキップ
+                if other_mmsi == target_mmsi:
                     continue
 
-                # 対象船舶の最短距離時刻に最も近い時刻の他船舶データを取得
                 other_vessel_data = distance_list[distance_list["mmsi"] == other_mmsi]
                 if other_vessel_data.empty:
                     continue
 
-                # 時間差を計算して最も近いレコードを特定
-                # SettingWithCopyWarningを防ぐために.locを使用
                 other_vessel_data = other_vessel_data.copy()
                 other_vessel_data["time_diff"] = abs(
                     other_vessel_data["dt_pos_utc"] - min_distance_time
@@ -195,7 +267,6 @@ def cut_wav_and_make_metadata(
                     other_vessel_data["time_diff"].idxmin()
                 ]
 
-                # 距離を比較 - 他船舶の距離が対象船舶より近ければフラグをFalseに
                 if closest_record["distance [m]"] < distance["min_distance [m]"]:
                     print(
                         f"船舶 {distance.get('vessel_name', 'Unknown')} (MMSI: {target_mmsi})の最短距離時刻に、"
@@ -206,98 +277,58 @@ def cut_wav_and_make_metadata(
                     break
 
             if not is_closest_vessel:
-                continue  # 次の船舶へ
+                continue
 
-        # すべての条件を通過したので、WAVファイルをカット
-        metadata_for_dis = meta_data.copy()
-        print(f"target distance data:{id}/{distances.shape[0]}")
+        # 切り出し時刻の計算
         min_distance_time = distance["min_distance_time"]
-        # Use cut_margin_minutes from config
         margin_delta = datetime.timedelta(minutes=cut_margin_minutes)
         start_time = min_distance_time - margin_delta
         end_time = min_distance_time + margin_delta
 
-        # 切り出し開始時刻をTOMLファイルのstart_dateに設定
-        metadata_for_dis["observation_info"]["date_info"]["start_date"] = (
-            start_time.strftime("%Y-%m-%dT%H:%M:%S")
-        )
+        # 前回の探索位置から開始
+        wav_idx = wav_index.find_wav_index(start_time, last_processed_wav_index)
+        with open("debug_log.txt", "a") as dbg:
+            dbg.write(
+                f"[DEBUG] wav_idx={wav_idx}, len(wav_list)={len(wav_list)}, start_time={start_time}, last_processed_wav_index={last_processed_wav_index}\n"
+            )
+        if wav_idx is None:
+            continue
 
-        data_sample_num = 0
-        for idx in range(len(wav_list) - 1):
+        # 既に処理済みのWAVファイルはスキップ
+        if wav_idx in processed_wav_files:
+            continue
+
+        # 切り出し処理
+        if wav_idx < len(wav_list) - 1:
+            # サンプルオフセットを取得
+            data_sample_num = wav_index.get_sample_offset(wav_idx)
+
+            # メタデータのコピーを作成
+            metadata_for_dis = meta_data.copy()
+
+            # 切り出し開始時刻をTOMLファイルのstart_dateに設定
+            metadata_for_dis["observation_info"]["date_info"]["start_date"] = (
+                start_time.strftime("%Y-%m-%dT%H:%M:%S")
+            )
+
+            # 切り出し処理
             sample_num, flag, meta_d, wav_name = cut_wav_file(
-                wav_list[idx],
-                wav_list[idx + 1],
-                record_type,
-                record_start_time,
+                wav_list[wav_idx],
+                wav_list[wav_idx + 1],
+                meta_data["observation_info"]["record_info"]["channel_num"],
+                wav_index.record_start_time,
                 start_time,
                 end_time,
                 data_sample_num,
-                wav_output_dir,
+                output_dir,
                 metadata_for_dis,
                 record_pos,
-                wav_durations,
-                idx,
+                wav_index.get_wav_durations(),
+                wav_idx,
             )
+
             if flag:
-                # Set the vessel sound source information
-                # Category for vessel sounds is Anthrophony (1)
-                meta_d["source_info"]["category"] = 1
-
-                # Set the vessel name as the sound source using the format: vessel_type(vessel_name)
-                vessel_type = (
-                    distance["vessel_type"]
-                    if not pd.isna(distance["vessel_type"])
-                    else "Unknown"
-                )
-                vessel_name = (
-                    distance["vessel_name"]
-                    if not pd.isna(distance["vessel_name"])
-                    else "Unknown"
-                )
-                meta_d["source_info"]["sound_source"] = f"{vessel_type}({vessel_name})"
-
-                # Reliability is 2 since we confirmed the vessel via AIS data
-                meta_d["source_info"]["reliability"] = 2
-
-                # Set environmental conditions
-                # These would typically be measured or known, but for now we'll set defaults
-                meta_d["source_info"]["precipitation"] = 0.0
-                meta_d["source_info"]["wind_speed"] = 0.0
-
-                # Add condition information
-                meta_d["source_info"][
-                    "condition"
-                ] = f"Ship distance: {distance['min_distance [m]']:.2f}m"
-
-                # Get ship length and width from AIS data if available
-                ship_length = (
-                    distance["length"]
-                    if "length" in distance.index and not pd.isna(distance["length"])
-                    else "Unknown"
-                )
-                ship_width = (
-                    distance["width"]
-                    if "width" in distance.index and not pd.isna(distance["width"])
-                    else "Unknown"
-                )
-
-                # Format vessel details for the appendix field including length and width
-                vessel_info_str = (
-                    f"mmsi: {distance['mmsi']}, "
-                    f"vessel_type: {vessel_type}, "
-                    f"length: {ship_length}, "
-                    f"width: {ship_width}, "
-                    f"min_distance_m: {distance['min_distance [m]']}, "
-                    f"min_distance_time: {distance['min_distance_time'].strftime('%Y-%m-%dT%H:%M:%S')}"
-                )
-
-                # Set appendix with vessel information
-                meta_d["source_info"]["appendix"] = vessel_info_str
-
-                # TOMLファイルを生成して保存
-                with open(f"{wav_output_dir}/{wav_name}.toml", "wb") as f:
-                    tomli_w.dump(meta_d, f)
-                break
-
-            else:
-                data_sample_num += sample_num
+                # メタデータの更新とTOMLファイルの生成
+                update_metadata_and_save_toml(meta_d, distance, wav_name, output_dir)
+                last_processed_wav_index = wav_idx
+                processed_wav_files.add(wav_idx)

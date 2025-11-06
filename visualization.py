@@ -8,7 +8,7 @@ from scipy import signal
 import math  # Added for ceil
 
 
-def plot_geolocation(idx, df, record_pos, output_dir):
+def plot_geolocation(idx, df, record_pos, output_dir, target_mmsis=None):
     """
     Plots geolocation data for vessels and saves the output as a PNG file.
 
@@ -40,7 +40,7 @@ def plot_geolocation(idx, df, record_pos, output_dir):
 
     # 録音位置をプロット
     ax.scatter(
-        record_pos[1], record_pos[0], c="blue", label="rec_pos", marker="*", s=100
+        record_pos[1], record_pos[0], c="blue", label="rec_pos", marker="*", s=10
     )  # Made color explicit and larger
     ax.text(
         record_pos[1],
@@ -69,20 +69,32 @@ def plot_geolocation(idx, df, record_pos, output_dir):
         # データが空でない場合のみプロット
         if not vessel_df.empty:
             vessel_name = vessel_df["vessel_name"].iloc[0]
-            color = cmap(
-                i / num_vessels if num_vessels > 0 else 0
-            )  # Assign color based on index
+            is_target = (
+                (set(target_mmsis) if target_mmsis is not None else set(unique_mmsi))
+                if target_mmsis is not None
+                else set(unique_mmsi)
+            )
+            in_target = mmsi in is_target
+            color = (
+                cmap(i / num_vessels if num_vessels > 0 else 0)
+                if in_target
+                else (0.6, 0.6, 0.6)
+            )
+            line_alpha = 0.9 if in_target else 0.2
+            point_alpha = 1.0 if in_target else 0.2
 
             # 船舶の位置をプロット (scatter for points)
             scatter = ax.scatter(
                 vessel_df["longitude"],
                 vessel_df["latitude"],
-                label=vessel_name,
+                label=vessel_name if in_target else None,
                 color=color,
                 s=20,  # Smaller points
+                alpha=point_alpha,
             )
-            handles.append(scatter)
-            labels.append(vessel_name)
+            if in_target:
+                handles.append(scatter)
+                labels.append(vessel_name)
 
             # 時間順にソートして軌跡をプロット (plot for line)
             vessel_df_sorted = vessel_df.sort_values("dt_pos_utc")
@@ -91,7 +103,7 @@ def plot_geolocation(idx, df, record_pos, output_dir):
                 vessel_df_sorted["latitude"],
                 linestyle="-",
                 color=color,
-                alpha=0.7,
+                alpha=line_alpha,
             )
 
             # 各位置に時間情報をテキストとして表示 (Consider reducing frequency if too cluttered)
@@ -112,11 +124,11 @@ def plot_geolocation(idx, df, record_pos, output_dir):
             #         alpha=0.8,
             #     )
 
-    # 凡例は船舶がある場合のみ表示
-    # if handles:
-    #     ax.legend(
-    #         handles, labels, bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=8
-    #     )
+    # 凡例はターゲット船のみ表示
+    if handles:
+        ax.legend(
+            handles, labels, bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=8
+        )
 
     # Add grid
     ax.grid(True, linestyle="--", alpha=0.6)

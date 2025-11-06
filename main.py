@@ -12,7 +12,11 @@ except ModuleNotFoundError:
     import tomli as tomllib  # Fallback to tomli if tomllib not found
 
 from data_processing import read_ais, complement_trajectory
-from distance_calculation import calculate_shortest_distance, haversine
+from distance_calculation import (
+    calculate_shortest_distance,
+    calculate_distance_timeseries,
+    haversine,
+)
 from visualization import plot_geolocation, plot_mother_source_spectrogram
 from audio_processing import cut_wav_and_make_metadata
 
@@ -50,7 +54,7 @@ def main(
     flag_fig,
     flag_movie,
     flag_csv,
-    config_path,  # Add config_path
+    config_path="config.toml",  # default for tests and CLI
 ):
     # Load configuration first
     config = load_config(config_path)
@@ -98,13 +102,50 @@ def main(
         os.makedirs(output_dir, exist_ok=True)
 
         ais_df = read_ais(ais_data)
-        if flag_fig:
-            # Pass vis_config if plot_geolocation needs it in the future
-            print("plot geolocation.....")
-            plot_geolocation(idx + 1, ais_df, record_pos, output_dir)
-        comp_df = complement_trajectory(ais_data)
+        comp_df = complement_trajectory(
+            ais_data,
+            record_pos=record_pos,
+            output_dir=output_dir,
+            plot_before_after=flag_fig,
+        )
+        # Compute per-time distances for other-vessel comparison, if needed by audio_processing
+        distance_list_df = calculate_distance_timeseries(
+            comp_df, record_pos, record_depth
+        )
         distances = calculate_shortest_distance(comp_df, record_pos, record_depth)
         distances_df = pd.DataFrame(distances)
+
+        # Determine target MMSIs for plotting (colored) based on cut criteria
+        target_mmsis = set()
+        if not distances_df.empty:
+            max_cut_distance = audio_config.get("max_cut_distance", float("inf"))
+            check_other_vessels = audio_config.get("check_other_vessels", False)
+            for _, row in distances_df.iterrows():
+                if row["min_distance [m]"] > max_cut_distance:
+                    continue
+                mmsi = row["mmsi"]
+                if check_other_vessels and not distance_list_df.empty:
+                    min_distance_time = row["min_distance_time"]
+                    is_closest = True
+                    for other_mmsi in distances_df["mmsi"].unique():
+                        if other_mmsi == mmsi:
+                            continue
+                        other = distance_list_df[distance_list_df["mmsi"] == other_mmsi]
+                        if other.empty:
+                            continue
+                        tmp = other.copy()
+                        tmp["time_diff"] = abs(tmp["dt_pos_utc"] - min_distance_time)
+                        closest = tmp.loc[tmp["time_diff"].idxmin()]
+                        if closest["distance [m]"] < row["min_distance [m]"]:
+                            is_closest = False
+                            break
+                    if not is_closest:
+                        continue
+                target_mmsis.add(mmsi)
+
+        if flag_fig:
+            print("plot geolocation.....")
+            plot_geolocation(idx + 1, ais_df, record_pos, output_dir, target_mmsis)
 
         # Add to collection for spectrograms
         all_distances_dfs.append(distances_df)
@@ -120,7 +161,7 @@ def main(
             meta_data,
             start_tim,
             distances_df,
-            pd.DataFrame(),  # You can handle the distance list as needed.
+            distance_list_df,
             output_dir,
             record_pos,
             audio_config,  # Pass audio config dictionary
