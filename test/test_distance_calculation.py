@@ -15,17 +15,19 @@ class TestDistanceCalculation(unittest.TestCase):
         # テスト用のデータフレームを作成
         self.test_df = pd.DataFrame(
             {
-                "mmsi": [123456789, 123456789, 987654321, 987654321],
-                "vessel_name": ["Vessel A", "Vessel A", "Vessel B", "Vessel B"],
-                "vessel_type": ["Cargo", "Cargo", "Passenger", "Passenger"],
-                "length": [100, 100, 150, 150],
-                "width": [20, 20, 30, 30],
-                "latitude": [32.7, 32.71, 32.72, 32.73],
-                "longitude": [129.7, 129.71, 129.72, 129.73],
+                "mmsi": [123456789, 123456789, 123456789, 987654321, 987654321, 987654321],
+                "vessel_name": ["Vessel A", "Vessel A", "Vessel A", "Vessel B", "Vessel B", "Vessel B"],
+                "vessel_type": ["Cargo", "Cargo", "Cargo", "Passenger", "Passenger", "Passenger"],
+                "length": [100, 100, 100, 150, 150, 150],
+                "width": [20, 20, 20, 30, 30, 30],
+                "latitude": [32.7, 32.705, 32.71, 32.72, 32.725, 32.73],
+                "longitude": [129.7, 129.705, 129.71, 129.72, 129.725, 129.73],
                 "dt_pos_utc": [
                     pd.Timestamp("2024-03-19 07:00:00"),
+                    pd.Timestamp("2024-03-19 07:00:30"),
                     pd.Timestamp("2024-03-19 07:01:00"),
                     pd.Timestamp("2024-03-19 07:02:00"),
+                    pd.Timestamp("2024-03-19 07:02:30"),
                     pd.Timestamp("2024-03-19 07:03:00"),
                 ],
             }

@@ -5,6 +5,95 @@ import matplotlib.pyplot as plt
 from visualization import plot_geolocation
 
 
+def read_all_ais(ais_paths, low_memory=False):
+    """
+    Read and combine multiple AIS CSV files into a single normalized DataFrame.
+
+    Args:
+        ais_paths (list[str]): List of AIS CSV file paths
+        low_memory (bool): If True, use memory-efficient processing (slower but uses less RAM)
+
+    Returns:
+        DataFrame: Combined AIS with normalized headers, deduplicated and sorted by (mmsi, dt_pos_utc)
+    """
+    if not low_memory:
+        # Original fast method: load all into memory
+        frames = []
+        for p in ais_paths:
+            try:
+                df = read_ais(p)
+                frames.append(df)
+            except Exception:
+                continue
+        if not frames:
+            return pd.DataFrame()
+        combined = pd.concat(frames, ignore_index=True)
+        if "dt_pos_utc" in combined.columns:
+            combined["dt_pos_utc"] = pd.to_datetime(
+                combined["dt_pos_utc"]
+            )  # idempotent
+        combined = combined.drop_duplicates(
+            subset=[c for c in ["mmsi", "dt_pos_utc"] if c in combined.columns]
+        )
+        sort_keys = [k for k in ["mmsi", "dt_pos_utc"] if k in combined.columns]
+        if sort_keys:
+            combined = combined.sort_values(sort_keys).reset_index(drop=True)
+        return combined
+    else:
+        # Memory-efficient method: process by MMSI groups
+        print("Using low-memory mode for AIS data processing...")
+        mmsi_data = {}  # {mmsi: list of dataframes}
+
+        # First pass: collect data per MMSI
+        for i, p in enumerate(ais_paths):
+            try:
+                print(f"  Reading file {i+1}/{len(ais_paths)}: {os.path.basename(p)}")
+                df = read_ais(p)
+
+                # Group by MMSI and store
+                for mmsi in df["mmsi"].unique():
+                    if mmsi not in mmsi_data:
+                        mmsi_data[mmsi] = []
+                    vessel_df = df[df["mmsi"] == mmsi].copy()
+                    mmsi_data[mmsi].append(vessel_df)
+
+                # Clear DataFrame from memory
+                del df
+            except Exception as e:
+                print(f"  Warning: Could not read {p}: {e}")
+                continue
+
+        if not mmsi_data:
+            return pd.DataFrame()
+
+        # Second pass: combine per MMSI and concatenate
+        print(f"  Combining data for {len(mmsi_data)} unique vessels...")
+        combined_list = []
+        for mmsi, frames in mmsi_data.items():
+            vessel_combined = pd.concat(frames, ignore_index=True)
+            if "dt_pos_utc" in vessel_combined.columns:
+                vessel_combined["dt_pos_utc"] = pd.to_datetime(
+                    vessel_combined["dt_pos_utc"]
+                )
+            vessel_combined = vessel_combined.drop_duplicates(
+                subset=[
+                    c for c in ["mmsi", "dt_pos_utc"] if c in vessel_combined.columns
+                ]
+            )
+            vessel_combined = vessel_combined.sort_values("dt_pos_utc").reset_index(
+                drop=True
+            )
+            combined_list.append(vessel_combined)
+
+        # Final combination
+        combined = pd.concat(combined_list, ignore_index=True)
+        sort_keys = [k for k in ["mmsi", "dt_pos_utc"] if k in combined.columns]
+        if sort_keys:
+            combined = combined.sort_values(sort_keys).reset_index(drop=True)
+
+        return combined
+
+
 def read_ais(ais_data):
     """
     Reads AIS data from a CSV file and converts the datetime format.
@@ -114,13 +203,19 @@ def complement_trajectory(
     Complements vessel trajectories by resampling and interpolating data to fill in missing points.
 
     Args:
-        data (str): Path to the CSV file containing vessel data.
+        data (str or DataFrame): Path to the CSV file or DataFrame containing vessel data.
+        record_pos (tuple): Recording position (latitude, longitude)
+        output_dir (str): Output directory for plots
+        plot_before_after (bool): Whether to plot before/after trajectories
 
     Returns:
         DataFrame: Resampled and interpolated vessel data.
     """
-    # AISの読み込みは共通関数に統一
-    data = read_ais(data)
+    # AISの読み込みは共通関数に統一（DataFrameも受け付け）
+    if isinstance(data, pd.DataFrame):
+        data = data.copy()
+    else:
+        data = read_ais(data)
     # 補完前の軌跡を表示（オプション）
     if plot_before_after and record_pos is not None and output_dir is not None:
         os.makedirs(output_dir, exist_ok=True)
@@ -128,9 +223,19 @@ def complement_trajectory(
     data.drop_duplicates(subset=["mmsi", "dt_pos_utc"], inplace=True)
     resampled_data_list = []
 
-    for _, group in data.groupby("mmsi"):
+    # Process each vessel group
+    total_vessels = data["mmsi"].nunique()
+    for i, (mmsi, group) in enumerate(data.groupby("mmsi")):
+        if (i + 1) % 100 == 0:  # Progress indicator for large datasets
+            print(f"  Processing vessel {i+1}/{total_vessels}...")
+
+        group = group.copy()  # Avoid SettingWithCopyWarning
         group.set_index("dt_pos_utc", inplace=True)
-        resampled = group.resample("1s")
+        # Infer object types before resampling to avoid FutureWarning
+        group = group.infer_objects(copy=False)
+        resampled = group.resample("1s").asfreq()
+        # Infer object types again after resampling
+        resampled = resampled.infer_objects(copy=False)
         group_resampled = resampled.interpolate().ffill()
         resampled_data_list.append(group_resampled)
 

@@ -18,3 +18,8 @@ plot_dpi = 150               # DPI for saving spectrogram images
 cut_margin_minutes = 5       # Margin in minutes before and after min_distance_time to define cut range 
 max_cut_distance = 1000.0    # 最大カット距離（メートル）- この距離以内の船舶だけがカット対象
 check_other_vessels = true   # 対象船舶が最も接近した時刻で他の船舶すべてが対象船舶よりも録音位置から離れているかチェックする 
+
+[data_processing]
+# AIS data processing mode
+combine_all_ais = true       # 全AIS CSVを結合して処理（true推奨）。falseの場合、CSVごとに独立処理し同一船舶でも重複切り出しの可能性あり
+low_memory_mode = true      # メモリ不足の場合trueに設定。処理は遅くなるが、メモリ使用量を削減（MMSI単位で処理）

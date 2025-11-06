@@ -49,7 +49,7 @@ def calculate_shortest_distance(df, record_pos, record_depth):
 
     distances = []
     for mmsi in df["mmsi"].unique():
-        vessel_df = df[df["mmsi"] == mmsi]
+        vessel_df = df[df["mmsi"] == mmsi].reset_index(drop=True)
         # Skip vessels with two or fewer AIS points (not enough data for analysis)
         if len(vessel_df) <= 2:
             continue
@@ -60,11 +60,12 @@ def calculate_shortest_distance(df, record_pos, record_depth):
         length = vessel_df["length"].values[0]
         width = vessel_df["width"].values[0]
 
-        record_pos_arr = np.tile(record_pos, (len(vessel_pos), 1))
+        # Calculate distances from all vessel positions to recording position
+        lat0, lon0 = record_pos
         dist = np.array(
             [
-                haversine(coord1[0], coord1[1], coord2[0], coord2[1])
-                for coord1, coord2 in zip(vessel_pos, record_pos_arr)
+                haversine(lat, lon, lat0, lon0)
+                for lat, lon in vessel_pos
             ]
         )
         min_dist_idx = np.argmin(dist)

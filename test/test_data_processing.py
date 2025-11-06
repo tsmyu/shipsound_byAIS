@@ -8,7 +8,7 @@ import tempfile
 
 # プロジェクトのルートディレクトリをパスに追加
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from data_processing import read_ais, complement_trajectory
+from data_processing import read_ais, read_all_ais, complement_trajectory
 
 
 class TestDataProcessing(unittest.TestCase):
@@ -226,6 +226,71 @@ class TestDataProcessing(unittest.TestCase):
         self.assertTrue(
             (b["dt_pos_utc"].diff().dropna().dt.total_seconds() == 1.0).all()
         )
+
+    def test_read_all_ais_combines_same_mmsi(self):
+        """同一MMSIが別CSVに分かれていても結合され、ソートされることを検証"""
+        t0 = pd.Timestamp("2024-01-01 00:00:00")
+        t1 = pd.Timestamp("2024-01-01 00:00:05")
+        t2 = pd.Timestamp("2024-01-01 00:00:10")
+        df_a = pd.DataFrame(
+            {
+                "mmsi": [999, 999],
+                "vessel_name": ["X", "X"],
+                "vessel_type": ["Cargo", "Cargo"],
+                "length": [100, 100],
+                "width": [20, 20],
+                "latitude": [0.0, 0.1],
+                "longitude": [0.0, 0.1],
+                "dt_pos_utc": [t0, t1],
+            }
+        )
+        df_b = pd.DataFrame(
+            {
+                "mmsi": [999],
+                "vessel_name": ["X"],
+                "vessel_type": ["Cargo"],
+                "length": [100],
+                "width": [20],
+                "latitude": [0.2],
+                "longitude": [0.2],
+                "dt_pos_utc": [t2],
+            }
+        )
+        p_a = os.path.join(self.temp_dir.name, "ais_a.csv")
+        p_b = os.path.join(self.temp_dir.name, "ais_b.csv")
+        df_a.to_csv(p_a, index=False)
+        df_b.to_csv(p_b, index=False)
+
+        combined = read_all_ais([p_a, p_b])
+        self.assertEqual(len(combined), 3)
+        self.assertTrue((combined["mmsi"].unique() == [999]).all())
+        # 時系列が昇順
+        times = combined["dt_pos_utc"].tolist()
+        self.assertEqual(times, sorted(times))
+
+    def test_complement_trajectory_accepts_dataframe(self):
+        """DataFrame入力を受け取り、全範囲で1秒補間されることを検証"""
+        t0 = pd.Timestamp("2024-01-01 00:00:00")
+        t2 = pd.Timestamp("2024-01-01 00:00:02")
+        df = pd.DataFrame(
+            {
+                "mmsi": [777, 777],
+                "vessel_name": ["Y", "Y"],
+                "vessel_type": ["Cargo", "Cargo"],
+                "length": [100, 100],
+                "width": [20, 20],
+                "latitude": [1.0, 1.2],
+                "longitude": [2.0, 2.2],
+                "dt_pos_utc": [t0, t2],
+            }
+        )
+        result = complement_trajectory(df)
+        v = result[result["mmsi"] == 777].sort_values("dt_pos_utc")
+        # 0,1,2秒の3点
+        self.assertEqual(len(v), 3)
+        # 中央は線形補間
+        self.assertAlmostEqual(v.iloc[1]["latitude"], 1.1, places=6)
+        self.assertAlmostEqual(v.iloc[1]["longitude"], 2.1, places=6)
 
 
 if __name__ == "__main__":

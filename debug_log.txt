@@ -1679,3 +1679,208 @@
 [DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:41:08, last_processed_wav_index=1
 [DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:46:40, last_processed_wav_index=1
 [DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:48:37, last_processed_wav_index=1
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:04:30, last_processed_wav_index=0
+[DEBUG] start_sample=743040000, end_sample=858240000, data_sample_num=0, len(data)=2073517664
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:13:45, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:16:41, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:23:43, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:35:27, last_processed_wav_index=0
+[DEBUG] start_sample=1099584000, end_sample=1214784000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:41:08, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:46:40, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:48:37, last_processed_wav_index=1
+[DEBUG] wav_idx=None, len(wav_list)=497, start_time=2025-03-14 11:01:40, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:00:53, last_processed_wav_index=0
+[DEBUG] start_sample=1392576000, end_sample=1507776000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:05:29, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:14:02, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:16:44, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:19:22, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:24:33, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:40:14, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:53:07, last_processed_wav_index=1
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:00:41, last_processed_wav_index=0
+[DEBUG] start_sample=2081472000, end_sample=2196672000, data_sample_num=2073517664, len(data)=2073534688
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:13:51, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:17:08, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:27:36, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:41:08, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:46:33, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:53:09, last_processed_wav_index=0
+[DEBUG] start_sample=2685888000, end_sample=2801088000, data_sample_num=2073517664, len(data)=2073534688
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 16:02:32, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 16:09:31, last_processed_wav_index=2
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:04:30, last_processed_wav_index=0
+[DEBUG] start_sample=743040000, end_sample=858240000, data_sample_num=0, len(data)=2073517664
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:13:45, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:16:41, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:23:43, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:35:27, last_processed_wav_index=0
+[DEBUG] start_sample=1099584000, end_sample=1214784000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:41:08, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:46:40, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:48:37, last_processed_wav_index=1
+[DEBUG] wav_idx=None, len(wav_list)=497, start_time=2025-03-14 11:01:40, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:00:53, last_processed_wav_index=0
+[DEBUG] start_sample=1392576000, end_sample=1507776000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:05:29, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:14:02, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:16:44, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:19:22, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:24:33, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:40:14, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:53:07, last_processed_wav_index=1
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:04:30, last_processed_wav_index=0
+[DEBUG] start_sample=743040000, end_sample=858240000, data_sample_num=0, len(data)=2073517664
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:13:45, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:16:41, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:23:43, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:35:27, last_processed_wav_index=0
+[DEBUG] start_sample=1099584000, end_sample=1214784000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:41:08, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:46:40, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:48:37, last_processed_wav_index=1
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:04:30, last_processed_wav_index=0
+[DEBUG] start_sample=743040000, end_sample=858240000, data_sample_num=0, len(data)=2073517664
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:13:45, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:16:41, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:23:43, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:35:27, last_processed_wav_index=0
+[DEBUG] start_sample=1099584000, end_sample=1214784000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:41:08, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:46:40, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:48:37, last_processed_wav_index=1
+[DEBUG] wav_idx=None, len(wav_list)=497, start_time=2025-03-14 11:01:40, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:00:53, last_processed_wav_index=0
+[DEBUG] start_sample=1392576000, end_sample=1507776000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:05:29, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:14:02, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:16:44, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:19:22, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:24:33, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:40:14, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:53:07, last_processed_wav_index=1
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:00:41, last_processed_wav_index=0
+[DEBUG] start_sample=2081472000, end_sample=2196672000, data_sample_num=2073517664, len(data)=2073534688
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:13:51, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:17:08, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:27:36, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:41:08, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:46:33, last_processed_wav_index=2
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:08, last_processed_wav_index=0
+[DEBUG] start_sample=352800, end_sample=529200, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:01, last_processed_wav_index=0
+[DEBUG] start_sample=44100, end_sample=573300, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=3, start_time=2024-03-19 06:53:10, last_processed_wav_index=0
+[DEBUG] start_sample=441000, end_sample=617400, data_sample_num=0, len(data)=882000
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:04:30, last_processed_wav_index=0
+[DEBUG] start_sample=743040000, end_sample=858240000, data_sample_num=0, len(data)=2073517664
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:13:45, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:16:41, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:23:43, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:35:27, last_processed_wav_index=0
+[DEBUG] start_sample=1099584000, end_sample=1214784000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:41:08, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:46:40, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:48:37, last_processed_wav_index=1
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:04:30, last_processed_wav_index=0
+[DEBUG] start_sample=743040000, end_sample=858240000, data_sample_num=0, len(data)=2073517664
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:13:45, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:16:41, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:23:43, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:35:27, last_processed_wav_index=0
+[DEBUG] start_sample=1099584000, end_sample=1214784000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:41:08, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:46:40, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:48:37, last_processed_wav_index=1
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:04:30, last_processed_wav_index=0
+[DEBUG] start_sample=743040000, end_sample=858240000, data_sample_num=0, len(data)=2073517664
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:13:45, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:16:41, last_processed_wav_index=0
+[DEBUG] wav_idx=0, len(wav_list)=497, start_time=2025-03-14 13:23:43, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:35:27, last_processed_wav_index=0
+[DEBUG] start_sample=1099584000, end_sample=1214784000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:41:08, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:46:40, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 13:48:37, last_processed_wav_index=1
+[DEBUG] wav_idx=None, len(wav_list)=497, start_time=2025-03-14 11:01:40, last_processed_wav_index=0
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:00:53, last_processed_wav_index=0
+[DEBUG] start_sample=1392576000, end_sample=1507776000, data_sample_num=1036732928, len(data)=2073558560
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:05:29, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:14:02, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:16:44, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:19:22, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:24:33, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:40:14, last_processed_wav_index=1
+[DEBUG] wav_idx=1, len(wav_list)=497, start_time=2025-03-14 14:53:07, last_processed_wav_index=1
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:00:41, last_processed_wav_index=0
+[DEBUG] start_sample=2081472000, end_sample=2196672000, data_sample_num=2073517664, len(data)=2073534688
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:13:51, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:17:08, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:27:36, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:41:08, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:46:33, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 15:53:09, last_processed_wav_index=0
+[DEBUG] start_sample=2685888000, end_sample=2801088000, data_sample_num=2073517664, len(data)=2073534688
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 16:02:32, last_processed_wav_index=2
+[DEBUG] wav_idx=2, len(wav_list)=497, start_time=2025-03-14 16:09:31, last_processed_wav_index=2
