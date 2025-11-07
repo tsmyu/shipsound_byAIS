@@ -4,6 +4,10 @@ from natsort import natsorted
 import glob
 import tomli
 import pandas as pd
+import warnings
+
+# Suppress FutureWarning messages
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Use tomllib if available (Python 3.11+), otherwise keep tomli
 try:
@@ -93,17 +97,23 @@ def main(
     # Collect all distance dataframes to process spectrograms once per mother source
     all_distances_dfs = []
 
+    # Statistics for final summary
+    total_vessels = 0
+    cut_target_vessels = 0
+    actual_cut_count = 0
+
     if combine_all_ais:
         print("Combining all AIS CSVs into a single dataset...")
         ais_df_all = read_all_ais(ais_list, low_memory=low_memory_mode)
         combined_output_dir = os.path.join(os.path.dirname(ais_list[0]), "combined")
         os.makedirs(combined_output_dir, exist_ok=True)
 
+        # First pass: complement trajectory without plotting
         comp_df_all = complement_trajectory(
             ais_df_all,
             record_pos=record_pos,
             output_dir=combined_output_dir,
-            plot_before_after=flag_fig,
+            plot_before_after=False,  # Disable plotting in first pass
         )
 
         distance_list_df_all = calculate_distance_timeseries(
@@ -113,6 +123,27 @@ def main(
             comp_df_all, record_pos, record_depth
         )
         distances_df_all = pd.DataFrame(distances_all)
+
+        # Update total vessels count
+        total_vessels = len(distances_df_all)
+
+        # Create min_distance_info dictionary for plotting
+        min_distance_info = {}
+        for d in distances_all:
+            min_distance_info[d["mmsi"]] = {
+                "min_distance_pos": d["min_distance_pos"],
+                "min_distance [m]": d["min_distance [m]"],
+            }
+
+        # Second pass: plot with min distance info if requested
+        if flag_fig:
+            comp_df_all = complement_trajectory(
+                ais_df_all,
+                record_pos=record_pos,
+                output_dir=combined_output_dir,
+                plot_before_after=True,
+                min_distance_info=min_distance_info,
+            )
 
         # Determine target MMSIs for plotting (colored) based on cut criteria
         target_mmsis = set()
@@ -144,6 +175,9 @@ def main(
                         continue
                 target_mmsis.add(mmsi)
 
+        # Update cut target vessels count
+        cut_target_vessels = len(target_mmsis)
+
         if flag_fig:
             print("plot geolocation (combined).....")
             plot_geolocation(
@@ -158,7 +192,7 @@ def main(
                 os.path.join(combined_output_dir, "distances_all.csv"), index=False
             )
 
-        cut_wav_and_make_metadata(
+        actual_cut_count = cut_wav_and_make_metadata(
             wav_list,
             meta_data,
             start_tim,
@@ -181,11 +215,12 @@ def main(
             os.makedirs(output_dir, exist_ok=True)
 
             ais_df = read_ais(ais_data)
+            # First pass: complement trajectory without plotting
             comp_df = complement_trajectory(
                 ais_data,
                 record_pos=record_pos,
                 output_dir=output_dir,
-                plot_before_after=flag_fig,
+                plot_before_after=False,  # Disable plotting in first pass
             )
             # Compute per-time distances for other-vessel comparison, if needed by audio_processing
             distance_list_df = calculate_distance_timeseries(
@@ -193,6 +228,27 @@ def main(
             )
             distances = calculate_shortest_distance(comp_df, record_pos, record_depth)
             distances_df = pd.DataFrame(distances)
+
+            # Update total vessels count
+            total_vessels += len(distances_df)
+
+            # Create min_distance_info dictionary for plotting
+            min_distance_info = {}
+            for d in distances:
+                min_distance_info[d["mmsi"]] = {
+                    "min_distance_pos": d["min_distance_pos"],
+                    "min_distance [m]": d["min_distance [m]"],
+                }
+
+            # Second pass: plot with min distance info if requested
+            if flag_fig:
+                comp_df = complement_trajectory(
+                    ais_data,
+                    record_pos=record_pos,
+                    output_dir=output_dir,
+                    plot_before_after=True,
+                    min_distance_info=min_distance_info,
+                )
 
             # Determine target MMSIs for plotting (colored) based on cut criteria
             target_mmsis = set()
@@ -226,6 +282,9 @@ def main(
                             continue
                     target_mmsis.add(mmsi)
 
+            # Update cut target vessels count
+            cut_target_vessels += len(target_mmsis)
+
             if flag_fig:
                 print("plot geolocation.....")
                 plot_geolocation(idx + 1, ais_df, record_pos, output_dir, target_mmsis)
@@ -239,7 +298,7 @@ def main(
                 )
 
             # Pass audio_config to audio_processing
-            cut_wav_and_make_metadata(
+            actual_cut_count += cut_wav_and_make_metadata(
                 wav_list,
                 meta_data,
                 start_tim,
@@ -267,6 +326,27 @@ def main(
             overall_output_dir,
             vis_config,  # Pass the modified visualization config including cut_margin_minutes
         )
+
+    # Print final statistics
+    print("\n" + "=" * 60)
+    print("処理完了統計:")
+    print("=" * 60)
+    print(f"全体の船舶数:        {total_vessels:>6} 隻")
+    print(f"切り出し対象船舶数:  {cut_target_vessels:>6} 隻")
+    print(f"実際の切り出し数:    {actual_cut_count:>6} 個")
+    if total_vessels > 0:
+        percentage = (cut_target_vessels / total_vessels) * 100
+        print(f"対象船舶割合:        {percentage:>6.2f} %")
+    print("-" * 60)
+    # Consistency check
+    if cut_target_vessels == actual_cut_count:
+        print("整合性チェック: OK (対象船舶数 == 切り出し数)")
+    else:
+        print(
+            f"整合性チェック: WARNING (対象船舶数 {cut_target_vessels} != 切り出し数 {actual_cut_count})"
+        )
+        print("  ※差分の原因: WAVファイルの範囲外、または切り出し処理の失敗")
+    print("=" * 60)
 
 
 if __name__ == "__main__":

@@ -197,7 +197,7 @@ def read_ais(ais_data):
 
 
 def complement_trajectory(
-    data, record_pos=None, output_dir=None, plot_before_after: bool = False
+    data, record_pos=None, output_dir=None, plot_before_after: bool = False, min_distance_info=None
 ):
     """
     Complements vessel trajectories by resampling and interpolating data to fill in missing points.
@@ -207,6 +207,7 @@ def complement_trajectory(
         record_pos (tuple): Recording position (latitude, longitude)
         output_dir (str): Output directory for plots
         plot_before_after (bool): Whether to plot before/after trajectories
+        min_distance_info (dict): Dictionary of {mmsi: {'min_distance_pos': (lat, lon), 'min_distance [m]': float}}
 
     Returns:
         DataFrame: Resampled and interpolated vessel data.
@@ -330,6 +331,34 @@ def complement_trajectory(
                     alpha=1.0,
                     s=16,
                 )
+
+            # Plot minimum distance point if available
+            if min_distance_info is not None and mmsi in min_distance_info:
+                min_info = min_distance_info[mmsi]
+                min_pos = min_info.get("min_distance_pos")
+                min_dist = min_info.get("min_distance [m]")
+                if min_pos is not None:
+                    # min_pos is (lat, lon)
+                    ax.scatter(
+                        min_pos[1], min_pos[0], 
+                        c="red", 
+                        marker="X", 
+                        s=150, 
+                        label=f"min dist ({min_dist:.1f}m)",
+                        edgecolors="black",
+                        linewidths=1.5,
+                        zorder=10
+                    )
+                    # Draw line from rec_pos to min_distance_pos
+                    ax.plot(
+                        [record_pos[1], min_pos[1]],
+                        [record_pos[0], min_pos[0]],
+                        color="red",
+                        linestyle="--",
+                        alpha=0.6,
+                        linewidth=1.5,
+                        zorder=5
+                    )
 
             ax.grid(True, linestyle="--", alpha=0.6)
             ax.set_title(f"MMSI {mmsi} trajectory (before vs after)")

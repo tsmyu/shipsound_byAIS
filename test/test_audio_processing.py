@@ -248,6 +248,161 @@ class TestAudioProcessing(unittest.TestCase):
         self.assertEqual(len(wav_files), 1)
         self.assertEqual(len(toml_files), 1)
 
+    def test_consistency_between_target_and_actual_cut(self):
+        """切り出し対象船舶数と実際の切り出し数の整合性をテスト"""
+        # メタデータの作成
+        meta_data = {
+            "observation_info": {
+                "date_info": {"start_date": "2024-03-19T07:00:00"},
+                "location_info": {
+                    "position": [32.71161, 129.77558],
+                    "installation_depth": 10.0,
+                },
+                "record_info": {"channel_num": 1},
+            }
+        }
+
+        # 録音開始時刻
+        start_time = pd.Timestamp("2024-03-19 07:00:00")
+        record_pos = [32.71161, 129.77558]
+
+        # 距離データの作成（3隻の船舶）
+        distances = pd.DataFrame(
+            {
+                "mmsi": [111111111, 222222222, 333333333],
+                "vessel_name": ["Vessel A", "Vessel B", "Vessel C"],
+                "vessel_type": ["Cargo", "Cargo", "Cargo"],
+                "length": [100, 150, 120],
+                "width": [20, 30, 25],
+                "min_distance_idx": [0, 0, 0],
+                "min_distance [m]": [500.0, 600.0, 700.0],
+                "min_distance_pos": [
+                    (32.712, 129.776),
+                    (32.713, 129.777),
+                    (32.714, 129.778),
+                ],
+                "min_distance_time": [
+                    start_time + datetime.timedelta(seconds=5),
+                    start_time + datetime.timedelta(seconds=15),
+                    start_time + datetime.timedelta(seconds=25),
+                ],
+            }
+        )
+
+        # 時系列距離データ（空のDataFrame）
+        distance_list = pd.DataFrame()
+
+        # オーディオ設定
+        audio_config = {
+            "cut_margin_minutes": 0.05,  # 3秒（短くして処理を高速化）
+            "max_cut_distance": 1000.0,  # すべての船舶が対象
+            "check_other_vessels": False,
+        }
+
+        # 切り出し実行
+        actual_cut_count = cut_wav_and_make_metadata(
+            self.wav_files,
+            meta_data,
+            start_time.strftime("%Y-%m-%dT%H:%M:%S"),
+            distances,
+            distance_list,
+            self.test_dir,
+            record_pos,
+            audio_config,
+        )
+
+        # 整合性チェック：対象船舶数と実際の切り出し数が一致するか
+        expected_target_vessels = len(distances)
+        self.assertEqual(
+            actual_cut_count,
+            expected_target_vessels,
+            f"切り出し対象船舶数 ({expected_target_vessels}) と実際の切り出し数 ({actual_cut_count}) が一致しません",
+        )
+
+        # 実際に生成されたファイルも確認
+        wav_output_dir = os.path.join(self.test_dir, "wav")
+        wav_files = [f for f in os.listdir(wav_output_dir) if f.endswith(".wav")]
+        toml_files = [f for f in os.listdir(wav_output_dir) if f.endswith(".toml")]
+        self.assertEqual(len(wav_files), expected_target_vessels)
+        self.assertEqual(len(toml_files), expected_target_vessels)
+
+    def test_consistency_with_distance_filter(self):
+        """距離フィルター適用時の整合性をテスト"""
+        # メタデータの作成
+        meta_data = {
+            "observation_info": {
+                "date_info": {"start_date": "2024-03-19T07:00:00"},
+                "location_info": {
+                    "position": [32.71161, 129.77558],
+                    "installation_depth": 10.0,
+                },
+                "record_info": {"channel_num": 1},
+            }
+        }
+
+        start_time = pd.Timestamp("2024-03-19 07:00:00")
+        record_pos = [32.71161, 129.77558]
+
+        # 距離データの作成（3隻、うち1隻のみが距離条件を満たす）
+        distances = pd.DataFrame(
+            {
+                "mmsi": [111111111, 222222222, 333333333],
+                "vessel_name": ["Vessel A", "Vessel B", "Vessel C"],
+                "vessel_type": ["Cargo", "Cargo", "Cargo"],
+                "length": [100, 150, 120],
+                "width": [20, 30, 25],
+                "min_distance_idx": [0, 0, 0],
+                "min_distance [m]": [500.0, 1500.0, 2000.0],  # 後ろ2隻は遠い
+                "min_distance_pos": [
+                    (32.712, 129.776),
+                    (32.720, 129.785),
+                    (32.725, 129.790),
+                ],
+                "min_distance_time": [
+                    start_time + datetime.timedelta(seconds=5),
+                    start_time + datetime.timedelta(seconds=15),
+                    start_time + datetime.timedelta(seconds=25),
+                ],
+            }
+        )
+
+        distance_list = pd.DataFrame()
+
+        # オーディオ設定（距離制限: 1000m）
+        audio_config = {
+            "cut_margin_minutes": 0.05,
+            "max_cut_distance": 1000.0,  # 1隻だけが対象
+            "check_other_vessels": False,
+        }
+
+        # 切り出し実行
+        actual_cut_count = cut_wav_and_make_metadata(
+            self.wav_files,
+            meta_data,
+            start_time.strftime("%Y-%m-%dT%H:%M:%S"),
+            distances,
+            distance_list,
+            self.test_dir,
+            record_pos,
+            audio_config,
+        )
+
+        # 期待される対象船舶数：1隻（500m以内の船舶のみ）
+        expected_target_vessels = len(
+            distances[distances["min_distance [m]"] <= 1000.0]
+        )
+        self.assertEqual(expected_target_vessels, 1)
+        self.assertEqual(
+            actual_cut_count,
+            expected_target_vessels,
+            f"距離フィルター適用時の整合性エラー: 対象 {expected_target_vessels} != 実際 {actual_cut_count}",
+        )
+
+        # 実際に生成されたファイルも確認
+        wav_output_dir = os.path.join(self.test_dir, "wav")
+        wav_files = [f for f in os.listdir(wav_output_dir) if f.endswith(".wav")]
+        self.assertEqual(len(wav_files), expected_target_vessels)
+
 
 if __name__ == "__main__":
     unittest.main()

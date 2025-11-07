@@ -15,9 +15,9 @@ plot_dpi = 150               # DPI for saving spectrogram images
 
 [audio_processing]
 # Parameters for cut_wav_and_make_metadata
-cut_margin_minutes = 5       # Margin in minutes before and after min_distance_time to define cut range 
+cut_margin_minutes = 1       # Margin in minutes before and after min_distance_time to define cut range 
 max_cut_distance = 1000.0    # 最大カット距離（メートル）- この距離以内の船舶だけがカット対象
-check_other_vessels = true   # 対象船舶が最も接近した時刻で他の船舶すべてが対象船舶よりも録音位置から離れているかチェックする 
+check_other_vessels = false   # 対象船舶が最も接近した時刻で他の船舶すべてが対象船舶よりも録音位置から離れているかチェックする 
 
 [data_processing]
 # AIS data processing mode
