@@ -108,7 +108,7 @@ def read_ais(ais_data):
     def _get_type_candidates() -> dict:
         """Return candidate column names per canonical field (absorb header variations)."""
         # Canonical fields we standardize to: mmsi, dt_pos_utc, latitude, longitude,
-        # vessel_name, vessel_type, length, width
+        # vessel_name, vessel_type, length, width, speed
         return {
             "mmsi": ["mmsi", "MMSI"],
             "dt_pos_utc": [
@@ -122,6 +122,7 @@ def read_ais(ais_data):
             "vessel_type": ["vessel_type", "cargoType"],
             "length": ["length", "length_m", "LENGTH"],
             "width": ["width", "width_m", "beam", "BEAM", "breadth"],
+            "speed": ["speed", "Speed", "SPEED", "SOG", "sog", "speedOverGround", "speed_over_ground"],
             # Specialized dimension headers (some AIS provide hull dims as A/B/C/D)
             # length = dimA + dimB, width = dimC + dimD
             # We keep component keys separate to avoid renaming original columns

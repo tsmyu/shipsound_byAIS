@@ -23,6 +23,10 @@ from distance_calculation import (
 )
 from visualization import plot_geolocation, plot_mother_source_spectrogram
 from audio_processing import cut_wav_and_make_metadata
+from acoustic_features import (
+    analyze_vessel_acoustic_features,
+    plot_feature_vs_vessel_params,
+)
 
 
 def read_toml_file(file_path):
@@ -310,7 +314,8 @@ def main(
             )
 
     # Create mother source spectrograms with cut indicators if flag_fig is True
-    if flag_fig and wav_list:
+    enable_spectrogram = vis_config.get("enable_spectrogram", True)
+    if flag_fig and wav_list and enable_spectrogram:
         print(f"Generating time-averaged spectrograms for all mother source files...")
         # Create an overall output directory for spectrograms
         overall_output_dir = os.path.join(
@@ -326,6 +331,68 @@ def main(
             overall_output_dir,
             vis_config,  # Pass the modified visualization config including cut_margin_minutes
         )
+
+    # Acoustic feature analysis
+    acoustic_config = config.get("acoustic_features", {})
+    enable_feature_plots = acoustic_config.get("enable_feature_plots", False)
+    analysis_time_window = acoustic_config.get("analysis_time_window", 10)
+
+    if enable_feature_plots and len(all_distances_dfs) > 0 and wav_list:
+        print(f"\n音響特徴量分析を開始...")
+
+        # Combine all distances for feature analysis
+        if combine_all_ais:
+            # Use combined data
+            features_output_dir = os.path.join(
+                os.path.dirname(ais_list[0]), "combined", "acoustic_features"
+            )
+            os.makedirs(features_output_dir, exist_ok=True)
+
+            # Analyze acoustic features
+            from wav_index import WavFileIndex
+
+            wav_index = WavFileIndex(wav_list, start_tim)
+
+            features_df = analyze_vessel_acoustic_features(
+                wav_list,
+                wav_index,
+                all_distances_dfs[0] if len(all_distances_dfs) > 0 else pd.DataFrame(),
+                comp_df_all if "comp_df_all" in locals() else pd.DataFrame(),
+                analysis_window=analysis_time_window,
+                output_dir=features_output_dir,
+            )
+
+            # Plot feature vs vessel parameters
+            if len(features_df) > 0:
+                plot_feature_vs_vessel_params(features_df, features_output_dir)
+        else:
+            # Process each AIS file separately
+            for i, ais_data in enumerate(ais_list):
+                output_dir = os.path.join(os.path.dirname(ais_data), "output")
+                features_output_dir = os.path.join(output_dir, "acoustic_features")
+                os.makedirs(features_output_dir, exist_ok=True)
+
+                if i < len(all_distances_dfs) and len(all_distances_dfs[i]) > 0:
+                    from wav_index import WavFileIndex
+
+                    wav_index = WavFileIndex(wav_list, start_tim)
+
+                    # Get complemented data for this AIS file
+                    comp_df_local = complement_trajectory(
+                        ais_data, plot_before_after=False
+                    )
+
+                    features_df = analyze_vessel_acoustic_features(
+                        wav_list,
+                        wav_index,
+                        all_distances_dfs[i],
+                        comp_df_local,
+                        analysis_window=analysis_time_window,
+                        output_dir=features_output_dir,
+                    )
+
+                    if len(features_df) > 0:
+                        plot_feature_vs_vessel_params(features_df, features_output_dir)
 
     # Print final statistics
     print("\n" + "=" * 60)

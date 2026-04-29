@@ -168,6 +168,8 @@ def plot_mother_source_spectrogram(
     chunk_duration_seconds = vis_config.get("chunk_duration_seconds", 600)
     nperseg = vis_config.get("spectrogram_nperseg", 4096)
     noverlap = nperseg // 2
+    freq_min = vis_config.get("freq_min", 0)
+    freq_max = vis_config.get("freq_max", None)  # None means use maximum frequency
     max_freq_bins = vis_config.get("plot_max_freq_bins", 200)
     db_min = vis_config.get("plot_db_min", -80)
     db_max = vis_config.get("plot_db_max", -10)
@@ -217,6 +219,14 @@ def plot_mother_source_spectrogram(
                 original_samplerate = f_soundfile.samplerate
                 original_total_samples = len(f_soundfile)
                 original_duration_full = original_total_samples / original_samplerate
+
+                # Debug: Check file format
+                print(
+                    f"[DEBUG] File format: subtype={f_soundfile.subtype}, format={f_soundfile.format}"
+                )
+                print(
+                    f"[DEBUG] Channels: {f_soundfile.channels}, Frames: {f_soundfile.frames}"
+                )
 
             file_name = os.path.basename(wav_file)
             file_start_time = record_start_time + pd.Timedelta(seconds=cumulative_time)
@@ -275,6 +285,29 @@ def plot_mother_source_spectrogram(
                     if len(data.shape) > 1 and data.shape[1] > 1:
                         data = data[:, 0]
 
+                    # Debug: Check data statistics
+                    if chunk_idx == 0:
+                        print(f"    [DEBUG] Data shape: {data.shape}")
+                        print(f"    [DEBUG] Data dtype: {data.dtype}")
+                        print(
+                            f"    [DEBUG] Data range: [{np.min(data):.6f}, {np.max(data):.6f}]"
+                        )
+                        print(f"    [DEBUG] Data mean: {np.mean(data):.6f}")
+                        print(f"    [DEBUG] Data std: {np.std(data):.6f}")
+                        print(
+                            f"    [DEBUG] Non-zero samples: {np.count_nonzero(data)}/{len(data)}"
+                        )
+
+                        # Check if data is all zeros or very small
+                        if np.max(np.abs(data)) < 1e-6:
+                            print(
+                                f"    [WARNING] Audio data appears to be silent or nearly zero!"
+                            )
+
+                        # Sample a few values
+                        sample_indices = np.linspace(0, len(data) - 1, 5, dtype=int)
+                        print(f"    [DEBUG] Sample values: {data[sample_indices]}")
+
                     # Calculate spectrogram parameters
                     # nperseg = 4096 # Keep consistent for frequency axis
                     # noverlap = nperseg // 2
@@ -295,6 +328,26 @@ def plot_mother_source_spectrogram(
 
                         # Average spectrogram power over time axis for this chunk
                         avg_spectrum_chunk_power = np.mean(Sxx_chunk, axis=1)
+
+                        # Debug: Check spectrogram statistics
+                        if chunk_idx == 0:
+                            print(f"    [DEBUG] Spectrogram shape: {Sxx_chunk.shape}")
+                            print(
+                                f"    [DEBUG] Sxx range: [{np.min(Sxx_chunk):.2e}, {np.max(Sxx_chunk):.2e}]"
+                            )
+                            print(f"    [DEBUG] Sxx mean: {np.mean(Sxx_chunk):.2e}")
+                            print(
+                                f"    [DEBUG] Avg spectrum range: [{np.min(avg_spectrum_chunk_power):.2e}, {np.max(avg_spectrum_chunk_power):.2e}]"
+                            )
+
+                            # Convert to dB to see what values we get
+                            test_db = 10 * np.log10(avg_spectrum_chunk_power + 1e-10)
+                            print(
+                                f"    [DEBUG] dB range: [{np.min(test_db):.2f}, {np.max(test_db):.2f}]"
+                            )
+                            print(
+                                f"    [DEBUG] Frequency axis: {len(f)} bins, max freq: {np.max(f):.1f} Hz"
+                            )
 
                         # Store results
                         chunk_start_times_sec.append(chunk_idx * chunk_duration_seconds)
@@ -351,6 +404,27 @@ def plot_mother_source_spectrogram(
             ).T  # Shape: [freq_bins, num_chunks]
             chunk_time_axis = np.array(chunk_start_times_sec)
             f = frequency_axis  # Use frequency axis from first valid chunk
+
+            # Apply frequency range filter
+            if freq_max is None or freq_max == 0:
+                freq_max_val = np.max(f)  # Use maximum available frequency
+            else:
+                freq_max_val = freq_max
+
+            freq_mask = (f >= freq_min) & (f <= freq_max_val)
+            f = f[freq_mask]
+            avg_spectra_all_chunks = avg_spectra_all_chunks[freq_mask, :]
+
+            if len(f) > 0:
+                print(
+                    f"  Frequency range: {np.min(f):.1f} - {np.max(f):.1f} Hz ({len(f)} bins)"
+                )
+            else:
+                print(
+                    f"  Warning: No frequency bins in range {freq_min}-{freq_max_val} Hz. Skipping."
+                )
+                cumulative_time += original_duration_full
+                continue
 
             # Reduce frequency resolution for plotting if necessary (similar to old logic)
             if len(f) > max_freq_bins:

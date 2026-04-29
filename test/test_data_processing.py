@@ -292,6 +292,72 @@ class TestDataProcessing(unittest.TestCase):
         self.assertAlmostEqual(v.iloc[1]["latitude"], 1.1, places=6)
         self.assertAlmostEqual(v.iloc[1]["longitude"], 2.1, places=6)
 
+    def test_read_ais_speed_column_normalization(self):
+        """speedカラムが様々なヘッダー名から正しく読み込まれることを確認"""
+        # テスト1: "speed"ヘッダー
+        df1 = pd.DataFrame(
+            {
+                "mmsi": [111111111],
+                "latitude": [32.7],
+                "longitude": [129.7],
+                "dt_pos_utc": ["2024-03-19 07:00:00"],
+                "speed": [12.5],
+            }
+        )
+        path1 = os.path.join(self.temp_dir.name, "test_speed1.csv")
+        df1.to_csv(path1, index=False)
+        result1 = read_ais(path1)
+        self.assertIn("speed", result1.columns)
+        self.assertAlmostEqual(result1["speed"].iloc[0], 12.5)
+
+        # テスト2: "SOG"ヘッダー（Speed Over Ground）
+        df2 = pd.DataFrame(
+            {
+                "MMSI": [222222222],
+                "LATITUDE": [32.8],
+                "LONGITUDE": [129.8],
+                "dt_pos_utc": ["2024-03-19 08:00:00"],
+                "SOG": [8.3],
+            }
+        )
+        path2 = os.path.join(self.temp_dir.name, "test_speed2.csv")
+        df2.to_csv(path2, index=False)
+        result2 = read_ais(path2)
+        self.assertIn("speed", result2.columns)
+        self.assertAlmostEqual(result2["speed"].iloc[0], 8.3)
+
+        # テスト3: "Speed"ヘッダー（大文字始まり）
+        df3 = pd.DataFrame(
+            {
+                "mmsi": [333333333],
+                "lat": [32.9],
+                "lon": [129.9],
+                "dt_pos_utc": ["2024-03-19 09:00:00"],
+                "Speed": [15.0],
+            }
+        )
+        path3 = os.path.join(self.temp_dir.name, "test_speed3.csv")
+        df3.to_csv(path3, index=False)
+        result3 = read_ais(path3)
+        self.assertIn("speed", result3.columns)
+        self.assertAlmostEqual(result3["speed"].iloc[0], 15.0)
+
+    def test_read_ais_no_speed_column(self):
+        """speedカラムがない場合でもエラーにならないことを確認"""
+        df = pd.DataFrame(
+            {
+                "mmsi": [444444444],
+                "latitude": [33.0],
+                "longitude": [130.0],
+                "dt_pos_utc": ["2024-03-19 10:00:00"],
+            }
+        )
+        path = os.path.join(self.temp_dir.name, "test_no_speed.csv")
+        df.to_csv(path, index=False)
+        result = read_ais(path)
+        # speedカラムがない場合は存在しないだけ（エラーにならない）
+        self.assertNotIn("speed", result.columns)
+
 
 if __name__ == "__main__":
     unittest.main()
